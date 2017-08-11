@@ -4,6 +4,39 @@ from openpyxl import load_workbook
 from internetarchive import *
 import pickle
 import glob
+import argparse
+from datetime import datetime
+from time import strftime
+
+parser = argparse.ArgumentParser()
+parser.add_argument("coll_name", nargs='*', default=['1995'])
+args = parser.parse_args()
+# input_name is list of strings
+input_name = args.coll_name
+
+#Name of the Internet Archive collection target for uploads
+TestIdSuffix = 'test'   #Set to '' when testing is done
+CollectionName = 'test_collection'
+#CollectionName = 'councilmeetings'
+
+# Title of the item in the collection.  This is the one people see.
+Title = ''
+
+#Unique indentifer for the upload, becomes the IA directory name
+Identifier = ''
+
+# Formatted ISO 8601, yyyy-mm-dd
+Date = ''
+Desc = ''
+Notes= ''
+
+# Fixed Internet Archive metadata fields
+MediaType = 'texts'
+Creator = 'City of Fort Wayne, Indiana'
+License = 'http://creativecommons.org/licenses/by-nc-sa/4.0/'
+Subject = ['Fort Wayne','Local Government','City Council']
+
+
 
 # Key to the Council Proceedings Index spreadsheet
 # Col B, row[1],  Bills[file_name][0], Meeting Type
@@ -20,19 +53,19 @@ import glob
 # Col O, row[14], Bills[file_name][5], Final
 # Col P, row[15], Bills[file_name][6], Notes
 
-def build_Bills_dict (Bills, sheet):
+def build_Bills_dict (Bills):
     """ Read Excel Ordinance data sheet and append it to a dictionary"""
-    ws = wb[sheet]
-    for row in ws.rows:
-        # ignore rows where column B does not look like G-70-01
-        if  row[1].value is not None:
-            if row[1].value[1] == '-' and row[1].value[4] == '-' :
-                bill_data = (row[1].value,row[2].value,row[3].value,row[6].value,row[13].value,row[14].value,row[15].value)
-                key = row[1].value.strip()
-                try:
-                    print (Bills[key][0],'duplicate key')
-                except KeyError:
-                    Bills[key] = bill_data
+    for ws in wb.worksheets:
+        for row in ws.rows:
+            # ignore rows where column B does not look like G-70-01
+            if  row[1].value is not None:
+                if row[1].value[1] == '-' and row[1].value[4] == '-' :
+                    bill_data = (row[1].value,row[2].value,row[3].value,row[6].value,row[13].value,row[14].value,row[15].value)
+                    key = row[1].value.strip()
+                    try:
+                        print (Bills[key][0],'duplicate key')
+                    except KeyError:
+                        Bills[key] = bill_data
     return Bills
 
 def build_Proceedings_dict (Proceedings, sheet):
@@ -42,7 +75,7 @@ def build_Proceedings_dict (Proceedings, sheet):
     for row in ws.rows:
         # ignore rows where column B is not a valid meeting type
         if  row[1].value in Valid_Types:
-            #date = row[2].value[6:9] + '-' + row[2].value[0:1] + '-' + row[2].value[3:4]
+
             # Regular Meeting
             if row[1].value == 'Council Proceeding':
                 key =('CR-' + str(row[2].value.day).zfill(2)+ '-'
@@ -94,24 +127,21 @@ except (OSError, IOError) as e:
 
 # open log file
 log = open('../Documents/Crosslink.txt', 'a')
+log.write(datetime.now().strftime('%Y-%m-%d %H:%M:%S, ') + 'Start UpLoad \n')
+
 log.write('Error,Bill,Intro,Intro Day,Final,Final Day,Notes' '\n')
 
 
 #wb = load_workbook(filename =
 #    '//vs-videostorage/City Council Ordinances/Council Proceedings Index.xlsx')
 wb = load_workbook(filename = '/media/smb/Council Proceedings Index.xlsx')
-#Proceedings = {}
-#Proceedings = build_Proceedings_dict (Proceedings, 'Sheet1')
 Bills = build_Proceedings_dict (Bills, 'Council Proceedings')
-#print ('Bills=',Bills)
 
 #wb = load_workbook(filename =
 #    '//vs-videostorage/City Council Ordinances/Scanned Ordinance Index.xlsx')
 wb = load_workbook(filename = '/media/smb/Scanned Ordinance Index.xlsx')
 
-Bills = build_Bills_dict (Bills, '1970')
-Bills = build_Bills_dict (Bills, '1971')
-Bills = build_Bills_dict (Bills, '1995')
+Bills = build_Bills_dict (Bills)
 
 # Read the file names
 PATH = '/media/smb/Uploads'
@@ -135,28 +165,23 @@ for f in range(len(fn_list)):
     if prefix in ['CR','CS','CO']: continue # this is a council proceeding
 
     bill = file_name.split(' ')[0]
-    identifier = 'FWCityCouncil-Ordinance-'+bill
-    title = 'Fort Wayne Ordinance '+bill
-    mediatype = 'texts'
-    collection = 'citycouncilordinances'
+    Identifier = 'FWCityCouncil-Ordinance-'+bill+TestIdSuffix
+    Title = 'Fort Wayne Ordinance '+bill
 
-    print('identifier',identifier)
     try:
         if Bills[bill][6] is None:
-            notes = ''
+            SPDnotes = ''
         else:
-            notes = Bills[bill][6]
-        print (bill,Bills[bill][4],Bills[bill][5])
+            SPDnotes = Bills[bill][6]
+        #print (bill,Bills[bill][4],Bills[bill][5])
         final = Bills[bill][5].strftime("%Y-%m-%d")
-
-        #date = final
 
         if Bills[bill][4] is None:
             intro = 'The Intro date not available'
         else:
             intro = Bills[bill][4].strftime("%Y-%m-%d")
 
-        desc = ('Bill: ' + bill + brk +
+        Desc = ('Bill: ' + bill + brk +
                 'Type: ' + BillType[bill[0]] + brk +
                 'Status: ' + Bills[bill][2] + brk +
                 'Ordinance: ' + Bills[bill][1] + brk +
@@ -185,7 +210,7 @@ for f in range(len(fn_list)):
         FinalID = 'FWCityCouncil-'+final
         FinalLink =(Link(final + ' Council Video',
                 'https://archive.org/details/FWCityCouncil-'+final,
-                'Video of Council Introduction '+final) + brk)
+                'Video of Final Disposition '+final) + brk)
 
         if FinalID in CouncilVideo:
             FinalLink += brk
@@ -200,30 +225,56 @@ for f in range(len(fn_list)):
                   '\n')
             FinalLink = ''
 
-        note = (IntroLink + FinalLink +
-                'Document Notes:' + notes)
+        Notes = (IntroLink + FinalLink +
+                'Document Notes:' + SPDnotes)
 
-        subject='Fort Wayne;'+bill+';'+Bills[bill][1]
+        Subject='Fort Wayne;'+bill+';'+Bills[bill][1]
+
+        print('identifier',Identifier,datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+
+        # checking the year in the file path against a list years to be processed
+        if dirlist[f].split('/')[4] in input_name:
+            FilePath = dirlist[f]+fn_list[f]
+            print('File Path',FilePath)
+            #print(brk)
+            #print('title',Title)
+            #print(brk)
+            #print(MediaType,CollectionName,final,intro)
+            #print(brk)
+            #print(Desc)
+            #print(brk)
+            #print(Notes)
+            #print(brk)
+            #print(Subject)
+                            
+            md = dict(  collection = CollectionName, 
+                        title      = Title,
+                        mediatype  = MediaType, 
+                        description= Desc,
+                        creator    = Creator,
+                        subject    = Subject,
+                        licenseurl = License,
+                        notes      = Notes,
+                        date       = final)
+            print(md)
+
+            try:
+                r = upload(Identifier, files=FilePath, metadata=md, 
+                           retries=30, checksum=True) #retries_sleep=20,
+                print ('Status code', r[0].status_code, FilePath)
+                log.write(datetime.now().strftime('%Y-%m-%d %H:%M:%S, ') + 
+                          FilePath +' uploaded' + '\n')
+
+            except Exception as e:
+                print('Upload Failed on ', FilePath, e.message, e.args)
+                log.write(datetime.now().strftime('%Y-%m-%d %H:%M:%S, ') + 
+                          FilePath +' failed' +  e.message + '\n')
+                continue
 
 
-        print('File Path',dirlist[f]+fn_list[f])
-        print(brk)
-        print('title',title)
-        print(brk)
-        print(mediatype,collection,final,intro)
-        print(brk)
-        print(desc)
-        print(brk)
-        print(note)
-        print(brk)
-        print(subject)
-                        
-        #print(bill,Bills[bill][1],Bills[bill][2],Bills[bill][4],Bills[bill][5])
-        print()
-        print(brk)
-        print(brk)
+            z=input('enter for next file to print')
         
     except KeyError:
         print(dirlist[f], fn_list[f],'<<<<========== Not Found in spreadsheet')
-    #z=input('file names')
+    #z=input('enter for next file')
 log.close()
