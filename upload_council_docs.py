@@ -7,6 +7,9 @@ import glob
 import argparse
 from datetime import datetime
 from time import strftime
+import subprocess
+from pathlib import Path
+import os
 
 parser = argparse.ArgumentParser()
 parser.add_argument("coll_name", nargs='*', default=['1995'])
@@ -256,21 +259,42 @@ for f in range(len(fn_list)):
                         licenseurl = License,
                         notes      = Notes,
                         date       = final)
-            print(md)
+            #print(md)
+
+            convertCmd = 'convert ' + FilePath +  ' ' + final + '-%03d.tif'
+            tmpDir = '/home/jghafa/archive/tmp/'
+            zipFile = tmpDir + Identifier + '_images.zip'
+            zipCmd = 'zip ' + zipFile + ' *.tif'
+            print(convertCmd)
+            print(zipCmd)
+            x = subprocess.run( [convertCmd + ';' + zipCmd],
+                     cwd=tmpDir,
+                     stdout=subprocess.DEVNULL,
+                     shell=True)
+
+            if not Path(zipFile):
+                z=input('no zip file for '+Identifier)
+                continue
 
             try:
-                r = upload(Identifier, files=FilePath, metadata=md, 
+                r = upload(Identifier, files=zipFile, metadata=md, 
                            retries=30, checksum=True) #retries_sleep=20,
-                print ('Status code', r[0].status_code, FilePath)
+                print ('Status code', r[0].status_code, zipFile)
                 log.write(datetime.now().strftime('%Y-%m-%d %H:%M:%S, ') + 
                           FilePath +' uploaded' + '\n')
 
             except Exception as e:
-                print('Upload Failed on ', FilePath, e.message, e.args)
+                print('Upload Failed on ', zipFile, e.message, e.args)
                 log.write(datetime.now().strftime('%Y-%m-%d %H:%M:%S, ') + 
                           FilePath +' failed' +  e.message + '\n')
                 continue
 
+            z=input('enter to delte temp files')
+
+            for tmpfile in glob.glob(tmpDir + '*.tif'):
+                os.remove(tmpfile)
+            for tmpfile in glob.glob(tmpDir + '*.zip'):
+                os.remove(tmpfile)
 
             z=input('enter for next file to print')
         
