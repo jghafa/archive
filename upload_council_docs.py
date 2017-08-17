@@ -12,15 +12,15 @@ from pathlib import Path
 import os
 
 parser = argparse.ArgumentParser()
-parser.add_argument("coll_name", nargs='*', default=['1995'])
+parser.add_argument("coll_name", nargs='*', default=['1969'])
 args = parser.parse_args()
 # input_name is list of strings
 input_name = args.coll_name
 
 #Name of the Internet Archive collection target for uploads
-TestIdSuffix = 'test'   #Set to '' when testing is done
-CollectionName = 'test_collection'
-#CollectionName = 'councilmeetings'
+TestIdSuffix = ''   #Set to '' when testing is done
+#CollectionName = 'test_collection'
+CollectionName = 'citycouncilordinances'
 
 # Title of the item in the collection.  This is the one people see.
 Title = ''
@@ -61,7 +61,7 @@ def build_Bills_dict (Bills):
     for ws in wb.worksheets:
         for row in ws.rows:
             # ignore rows where column B does not look like G-70-01
-            if  row[1].value is not None:
+            if  row[1].value is not None and not row[1].data_type in 'b':
                 if row[1].value[1] == '-' and row[1].value[4] == '-' :
                     bill_data = (row[1].value,row[2].value,row[3].value,row[6].value,row[13].value,row[14].value,row[15].value)
                     key = row[1].value.strip()
@@ -120,19 +120,28 @@ brk = '<br>'
 Bills = {}
 
 picklefile = 'CouncilVideo.pickle'
-
 try:
     CouncilVideo = pickle.load(open(picklefile, "rb"))
 except (OSError, IOError) as e:
-    print ('dumping with pickle')
+    print ('Reading councilmeeting collection')
     CouncilVideo = [item.metadata['identifier'] for item in search_items('collection:(councilmeetings)').iter_as_items()]
     pickle.dump(CouncilVideo, open(picklefile, "wb"), protocol=pickle.HIGHEST_PROTOCOL)
 
-# open log file
-log = open('../Documents/Crosslink.txt', 'a')
-log.write(datetime.now().strftime('%Y-%m-%d %H:%M:%S, ') + 'Start UpLoad \n')
+picklefile = 'CouncilOrdinance.pickle'
+try:
+    CouncilOrdinance = pickle.load(open(picklefile, "rb"))
+except (OSError, IOError) as e:
+    print ('Reading citycouncilordinance collection')
+    CouncilOrdinance = [item.metadata['identifier'] for item in search_items('collection:(citycouncilordinances)').iter_as_items()]
+    pickle.dump(CouncilOrdinance, open(picklefile, "wb"), protocol=pickle.HIGHEST_PROTOCOL)
 
-log.write('Error,Bill,Intro,Intro Day,Final,Final Day,Notes' '\n')
+# open log file
+log = open('../Documents/log.txt', 'a')
+xlink = open('../Documents/Crosslink.txt', 'a')
+log.write(datetime.now().strftime('%Y-%m-%d %H:%M:%S, ') + 'Start UpLoad \n')
+xlink.write(datetime.now().strftime('%Y-%m-%d %H:%M:%S, ') + 'Start UpLoad \n')
+
+xlink.write('Error,Bill,Intro,Intro Day,Final,Final Day,Notes' '\n')
 
 
 #wb = load_workbook(filename =
@@ -201,7 +210,7 @@ for f in range(len(fn_list)):
             IntroLink += brk
         else:
             if Bills[bill][4].year in range(1981,2007):
-                log.write('Missing Intro Video,'+
+                xlink.write('Missing Intro Video,'+
                   hyperlink(dirlist[f].replace('/media/smb/','\\\\vs-videostorage\\City Council Ordinances\\').replace('/','\\') + fn_list[f],bill)+ ',' +
                   hyperlink('https://archive.org/details/FWCityCouncil-'+intro, intro) + ',' +
                   '"=datevalue(indirect(address(row(),column()-1,4)))"' + ',' +                
@@ -219,7 +228,7 @@ for f in range(len(fn_list)):
             FinalLink += brk
         else:
             if Bills[bill][5].year in range(1981,2007):
-                log.write('Missing Final Video,'+
+                xlink.write('Missing Final Video,'+
                   hyperlink(dirlist[f].replace('/media/smb/','\\\\vs-videostorage\\City Council Ordinances\\').replace('/','\\') + fn_list[f],bill)+ ',' +
                   hyperlink('https://archive.org/details/FWCityCouncil-'+intro, intro) + ',' +
                   '"=datevalue(indirect(address(row(),column()-1,4)))"' + ',' +                
@@ -233,12 +242,16 @@ for f in range(len(fn_list)):
 
         Subject='Fort Wayne;'+bill+';'+Bills[bill][1]
 
-        print('identifier',Identifier,datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+        if Identifier in CouncilOrdinance:
+            print('Skipping',Identifier,datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+            continue
+
+        print('Identifier',Identifier,datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
         # checking the year in the file path against a list years to be processed
         if dirlist[f].split('/')[4] in input_name:
             FilePath = dirlist[f]+fn_list[f]
-            print('File Path',FilePath)
+            #print('File Path',FilePath)
             #print(brk)
             #print('title',Title)
             #print(brk)
@@ -265,8 +278,6 @@ for f in range(len(fn_list)):
             tmpDir = '/home/jghafa/archive/tmp/'
             zipFile = tmpDir + Identifier + '_images.zip'
             zipCmd = 'zip ' + zipFile + ' *.tif'
-            print(convertCmd)
-            print(zipCmd)
             x = subprocess.run( [convertCmd + ';' + zipCmd],
                      cwd=tmpDir,
                      stdout=subprocess.DEVNULL,
@@ -279,7 +290,7 @@ for f in range(len(fn_list)):
             try:
                 r = upload(Identifier, files=zipFile, metadata=md, 
                            retries=30, checksum=True) #retries_sleep=20,
-                print ('Status code', r[0].status_code, zipFile)
+                print ('Status', r[0].status_code, zipFile)
                 log.write(datetime.now().strftime('%Y-%m-%d %H:%M:%S, ') + 
                           FilePath +' uploaded' + '\n')
 
@@ -289,16 +300,17 @@ for f in range(len(fn_list)):
                           FilePath +' failed' +  e.message + '\n')
                 continue
 
-            z=input('enter to delte temp files')
+            #z=input('enter to delte temp files')
 
             for tmpfile in glob.glob(tmpDir + '*.tif'):
                 os.remove(tmpfile)
             for tmpfile in glob.glob(tmpDir + '*.zip'):
                 os.remove(tmpfile)
 
-            z=input('enter for next file to print')
+            #z=input('enter for next file to print')
         
     except KeyError:
         print(dirlist[f], fn_list[f],'<<<<========== Not Found in spreadsheet')
     #z=input('enter for next file')
 log.close()
+xlink.close()
