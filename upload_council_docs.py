@@ -135,6 +135,19 @@ except (OSError, IOError) as e:
     CouncilOrdinance = [item.metadata['identifier'] for item in search_items('collection:(citycouncilordinances)').iter_as_items()]
     pickle.dump(CouncilOrdinance, open(picklefile, "wb"), protocol=pickle.HIGHEST_PROTOCOL)
 
+#delete this after all blueprints uploaded
+#bl_list= ['FWCityCouncil-Ordinance-Z-69-11-32', 'FWCityCouncil-Ordinance-Z-70-01-10', 'FWCityCouncil-Ordinance-Z-70-06-30', 'FWCityCouncil-Ordinance-Z-70-08-36', 'FWCityCouncil-Ordinance-Z-69-12-03', 'FWCityCouncil-Ordinance-Z-69-11-16', 'FWCityCouncil-Ordinance-Z-70-03-33', 'FWCityCouncil-Ordinance-Z-70-03-34', 'FWCityCouncil-Ordinance-Z-70-03-35', 'FWCityCouncil-Ordinance-Z-70-01-11', 'FWCityCouncil-Ordinance-Z-70-11-13', 'FWCityCouncil-Ordinance-Z-69-12-05', 'FWCityCouncil-Ordinance-Z-70-07-17', 'FWCityCouncil-Ordinance-Z-70-07-19', 'FWCityCouncil-Ordinance-G-71-09-18', 'FWCityCouncil-Ordinance-Z-95-06-07', 'FWCityCouncil-Ordinance-Z-95-07-03']
+
+#for b in CouncilOrdinance:
+#    if b in bl_list:
+#        print ('found first bp', b)
+#        CouncilOrdinance.remove(b)
+#for b in CouncilOrdinance:
+#    if b in bl_list:
+#        print ('found second bp', b)
+
+#z=input('blueprint')
+
 # open log file
 log = open('../Documents/log.txt', 'a')
 xlink = open('../Documents/Crosslink.txt', 'a')
@@ -251,7 +264,7 @@ for f in range(len(fn_list)):
         # checking the year in the file path against a list years to be processed
         if dirlist[f].split('/')[4] in input_name:
             FilePath = dirlist[f]+fn_list[f]
-            #print('File Path',FilePath)
+            print('File Path',FilePath)
             #print(brk)
             #print('title',Title)
             #print(brk)
@@ -274,19 +287,35 @@ for f in range(len(fn_list)):
                         date       = final)
             #print(md)
 
-            convertCmd = 'convert ' + FilePath +  ' ' + final + '-%03d.tif'
             tmpDir = '/home/jghafa/archive/tmp/'
-            zipFile = tmpDir + Identifier + '_images.zip'
-            zipCmd = 'zip ' + zipFile + ' *.tif'
-            x = subprocess.run( [convertCmd + ';' + zipCmd],
+
+            # Convert the multipage TIF to single TIFs
+            convertCmd = 'convert ' + FilePath +  ' ' + final + '-%03d.tif'
+            x = subprocess.run( [convertCmd],
                      cwd=tmpDir,
                      stdout=subprocess.DEVNULL,
                      shell=True)
 
-            if not Path(zipFile):
-                z=input('no zip file for '+Identifier)
-                continue
+            # Add the blueprints, if needed
+            if glob.glob(dirlist[f]+file_name+'*.PDF'):
+                convertCmd = ('convert '
+                            + dirlist[f]+file_name+'*.PDF'
+                            +  ' ' + final + '-9%02d.tif' )
+                x = subprocess.run( [convertCmd],
+                         cwd=tmpDir,
+                         stdout=subprocess.DEVNULL,
+                         shell=True)
+                print('PDF Added to',Identifier)
 
+            # Zip the TIFs into a single file to upload
+            zipFile = tmpDir + Identifier + '_images.zip'
+            zipCmd = 'zip ' + zipFile + ' *.tif'
+            x = subprocess.run([zipCmd],
+                     cwd=tmpDir,
+                     stdout=subprocess.DEVNULL,
+                     shell=True)
+
+            # Send the files to IA
             try:
                 r = upload(Identifier, files=zipFile, metadata=md, 
                            retries=30, checksum=True) #retries_sleep=20,
@@ -300,17 +329,16 @@ for f in range(len(fn_list)):
                           FilePath +' failed' +  e.message + '\n')
                 continue
 
-            #z=input('enter to delte temp files')
+            # Delete temp files')
 
             for tmpfile in glob.glob(tmpDir + '*.tif'):
                 os.remove(tmpfile)
             for tmpfile in glob.glob(tmpDir + '*.zip'):
                 os.remove(tmpfile)
 
-            #z=input('enter for next file to print')
         
     except KeyError:
         print(dirlist[f], fn_list[f],'<<<<========== Not Found in spreadsheet')
-    #z=input('enter for next file')
+
 log.close()
 xlink.close()

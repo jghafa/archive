@@ -28,6 +28,8 @@ for fn in files:
 
 pdf_count = tif_count = dup_count = fn_count = 0
 
+bp_list = []
+
 for x in range(len(fn_list)):
     # don't worry about Thumbs
     if fn_list[x] == 'Thumbs.db': continue
@@ -35,18 +37,23 @@ for x in range(len(fn_list)):
     # don't worry about council proceedings
     key = fn_list[x].split('-')[0].upper()        
     if key in ['CR','CS','CO']: continue
+
+    if ' ' in filename:
+        print('Space in File Name',dirlist[x],fn_list[x])
+
     
 #   check for a known ordinance type
     try:
         temp = FN_dict[key]
     except KeyError:
-        print('unknown ordinance',dirlist[x],fn_list[x])
+        print('unknown ordinance type',dirlist[x],fn_list[x])
 
 
 #   check for a PDF
     if fn_list[x].split('.')[-1].upper() == 'PDF':
         pdf_count += 1
-        print('PDF',dirlist[x],fn_list[x])
+        print('PDF Found',dirlist[x],fn_list[x])
+        bp_list.append(fn_list[x])
         
     if fn_list[x].split('.')[-1].upper() == 'TIF':
         tif_count += 1
@@ -54,16 +61,18 @@ for x in range(len(fn_list)):
         bill = fn_list[x].split('.')[0]
         blueprints = [b for b in fn_list if 'blueprint' in b and bill in b]
         if blueprints:
-            [print (' bp=',f) for f in blueprints]
+            [print (' blueprints=',f) for f in blueprints]
         
     fn_count += 1
     
     # found a duplicate file name
     if duplist [fn_list[x]] > 1:
         dup_count += 1
-        print ('dup',fn_list[x], dirlist[x])
+        print ('Duplicate File Found',fn_list[x], dirlist[x])
 
+print()
 print('Searched',fn_count,'files for duplicate file names')
 print('PDF', pdf_count)
 print('Tif', tif_count)
 print('Dups', dup_count)
+print('bl_list=',bp_list)
