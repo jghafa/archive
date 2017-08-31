@@ -12,7 +12,7 @@ from pathlib import Path
 import os
 
 parser = argparse.ArgumentParser()
-parser.add_argument("coll_name", nargs='*', default=['1969'])
+parser.add_argument("coll_name", nargs='*', default=['Z-69-12-03'])
 args = parser.parse_args()
 # input_name is list of strings
 input_name = args.coll_name
@@ -255,14 +255,14 @@ for f in range(len(fn_list)):
 
         Subject='Fort Wayne;'+bill+';'+Bills[bill][1]
 
-        if Identifier in CouncilOrdinance:
+        if Identifier in CouncilOrdinance and not bill in input_name:
             print('Skipping',Identifier,datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
             continue
 
         print('Identifier',Identifier,datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
         # checking the year in the file path against a list years to be processed
-        if dirlist[f].split('/')[4] in input_name:
+        if dirlist[f].split('/')[4] in input_name or bill in input_name:
             FilePath = dirlist[f]+fn_list[f]
             print('File Path',FilePath)
             #print(brk)
