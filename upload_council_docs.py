@@ -8,11 +8,14 @@ import argparse
 from datetime import datetime
 from time import strftime
 import subprocess
-from pathlib import Path
+#from pathlib import Path
 import os
 
+# True for uploading files, false for debugging
+update_IA = False
+
 parser = argparse.ArgumentParser()
-parser.add_argument("coll_name", nargs='*', default=['Z-69-12-03'])
+parser.add_argument("coll_name", nargs='*', default=['Z-70-06-30','Z-70-07-17']) #'Z-72-09-22'
 args = parser.parse_args()
 # input_name is list of strings
 input_name = args.coll_name
@@ -289,51 +292,71 @@ for f in range(len(fn_list)):
 
             tmpDir = '/home/jghafa/archive/tmp/'
 
-            # Convert the multipage TIF to single TIFs
-            convertCmd = 'convert ' + FilePath +  ' ' + final + '-%03d.tif'
-            x = subprocess.run( [convertCmd],
-                     cwd=tmpDir,
-                     stdout=subprocess.DEVNULL,
-                     shell=True)
-
-            # Add the blueprints, if needed
-            if glob.glob(dirlist[f]+file_name+'*.PDF'):
-                convertCmd = ('convert '
-                            + dirlist[f]+file_name+'*.PDF'
-                            +  ' ' + final + '-9%02d.tif' )
+            convertList = glob.glob(dirlist[f] + bill + '*.[tT][iI][fF]')
+            
+            tifnum = 0
+            for c in convertList:
+                print(c,tifnum)
+                convertCmd = ('convert ' + c.replace(' ','\ ') + ' '
+                              + final + '-' + str(tifnum) + '%03d.tif')
+                print(convertCmd)
                 x = subprocess.run( [convertCmd],
                          cwd=tmpDir,
                          stdout=subprocess.DEVNULL,
                          shell=True)
-                print('PDF Added to',Identifier)
+            
+                tifnum += 1
+
+            # Convert the multipage TIF to single TIFs
+            #convertCmd = 'convert ' + FilePath +  ' ' + final + '-%04d.tif'
+            #x = subprocess.run( [convertCmd],
+            #         cwd=tmpDir,
+            #         stdout=subprocess.DEVNULL,
+            #         shell=True)
+
+            # Add the blueprints, if needed
+            # should be bill instead of file_name
+            if glob.glob('/media/smb/Uploads/Blueprints/'+bill+'*.[tT][iI][fF]'):
+                convertCmd = ('convert ' + '/media/smb/Uploads/Blueprints/'
+                              + bill +'*.[tT][iI][fF]'
+                              +  ' ' + final + '-B%03d.tif' )
+                print(convertCmd)
+                x = subprocess.run( [convertCmd],
+                         cwd=tmpDir,
+                         stdout=subprocess.DEVNULL,
+                         shell=True)
+                print('Blueprints Added to',Identifier)
 
             # Zip the TIFs into a single file to upload
             zipFile = tmpDir + Identifier + '_images.zip'
-            zipCmd = 'zip ' + zipFile + ' *.tif'
+            zipCmd = 'zip ' + zipFile + ' *.[tT][iI][fF]'
             x = subprocess.run([zipCmd],
                      cwd=tmpDir,
                      stdout=subprocess.DEVNULL,
                      shell=True)
 
             # Send the files to IA
-            try:
-                r = upload(Identifier, files=zipFile, metadata=md, 
-                           retries=30, checksum=True) #retries_sleep=20,
-                print ('Status', r[0].status_code, zipFile)
-                log.write(datetime.now().strftime('%Y-%m-%d %H:%M:%S, ') + 
-                          FilePath +' uploaded' + '\n')
+            if update_IA:
+                try:
+                    r = upload(Identifier, files=zipFile, metadata=md, 
+                               retries=30, checksum=True) #retries_sleep=20,
+                    print ('Status', r[0].status_code, zipFile)
+                    log.write(datetime.now().strftime('%Y-%m-%d %H:%M:%S, ') + 
+                              FilePath +' uploaded' + '\n')
 
-            except Exception as e:
-                print('Upload Failed on ', zipFile, e.message, e.args)
-                log.write(datetime.now().strftime('%Y-%m-%d %H:%M:%S, ') + 
-                          FilePath +' failed' +  e.message + '\n')
-                continue
-
+                except Exception as e:
+                    print('Upload Failed on ', zipFile, e.message, e.args)
+                    log.write(datetime.now().strftime('%Y-%m-%d %H:%M:%S, ') + 
+                              FilePath +' failed' +  e.message + '\n')
+                    continue
+            else:
+                z=input('update_IA is False')
+                
             # Delete temp files')
 
-            for tmpfile in glob.glob(tmpDir + '*.tif'):
+            for tmpfile in glob.glob(tmpDir + '*.[tT][iI][fF]'):
                 os.remove(tmpfile)
-            for tmpfile in glob.glob(tmpDir + '*.zip'):
+            for tmpfile in glob.glob(tmpDir + '*.[zZ][iI][pP]'):
                 os.remove(tmpfile)
 
         
