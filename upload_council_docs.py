@@ -12,10 +12,10 @@ import subprocess
 import os
 
 # True for uploading files, false for debugging
-update_IA = False
+update_IA = True
 
 parser = argparse.ArgumentParser()
-parser.add_argument("coll_name", nargs='*', default=['Z-70-06-30','Z-70-07-17']) #'Z-72-09-22'
+parser.add_argument("coll_name", nargs='*', default=['1969']) 
 args = parser.parse_args()
 # input_name is list of strings
 input_name = args.coll_name
@@ -187,10 +187,15 @@ print ()
 # loop thru file names
 for f in range(len(fn_list)):
     file_name, file_ext = fn_list[f].split('.')
-    if file_name == 'Thumbs': continue  # this a windows junk file
-    if not file_ext.upper() == 'TIF': continue # not a bill
+    if file_name == 'Thumbs':
+        continue  # this a windows junk file
+    if not file_ext.upper() == 'TIF':
+        continue  # not a bill
+    if 'Blueprint' in dirlist[f]:
+        continue  # Skip the blueprints, they are batched with the primary
     prefix = file_name.split('-')[0]
-    if prefix in ['CR','CS','CO']: continue # this is a council proceeding
+    if prefix in ['CR','CS','CO']:
+        continue # this is a council proceeding
 
     bill = file_name.split(' ')[0]
     Identifier = 'FWCityCouncil-Ordinance-'+bill+TestIdSuffix
@@ -296,15 +301,13 @@ for f in range(len(fn_list)):
             
             tifnum = 0
             for c in convertList:
-                print(c,tifnum)
                 convertCmd = ('convert ' + c.replace(' ','\ ') + ' '
                               + final + '-' + str(tifnum) + '%03d.tif')
-                print(convertCmd)
+                #print(convertCmd)
                 x = subprocess.run( [convertCmd],
                          cwd=tmpDir,
                          stdout=subprocess.DEVNULL,
-                         shell=True)
-            
+                         shell=True)            
                 tifnum += 1
 
             # Convert the multipage TIF to single TIFs
@@ -320,7 +323,7 @@ for f in range(len(fn_list)):
                 convertCmd = ('convert ' + '/media/smb/Uploads/Blueprints/'
                               + bill +'*.[tT][iI][fF]'
                               +  ' ' + final + '-B%03d.tif' )
-                print(convertCmd)
+                #print(convertCmd)
                 x = subprocess.run( [convertCmd],
                          cwd=tmpDir,
                          stdout=subprocess.DEVNULL,
