@@ -178,7 +178,7 @@ for c in CouncilOrdinance:
 
 
     # check title page of book, fix if needed
-    item.download(files=c+'_scandata.xml',destdir=tmpDir,no_directory=True)
+    item.download(files=c+'_scandata.xml',destdir=tmpDir,no_directory=True,retries=10)
 
     xml_In = open(tmpDir +          c +'_scandata.xml', 'r')
     xmlOut = open(tmpDir + 'new_' + c +'_scandata.xml', 'w')
