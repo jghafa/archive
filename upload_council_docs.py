@@ -310,13 +310,6 @@ for f in range(len(fn_list)):
                          shell=True)            
                 tifnum += 1
 
-            # Convert the multipage TIF to single TIFs
-            #convertCmd = 'convert ' + FilePath +  ' ' + final + '-%04d.tif'
-            #x = subprocess.run( [convertCmd],
-            #         cwd=tmpDir,
-            #         stdout=subprocess.DEVNULL,
-            #         shell=True)
-
             # Add the blueprints, if needed
             # should be bill instead of file_name
             if glob.glob('/media/smb/Uploads/Blueprints/'+bill+'*.[tT][iI][fF]'):
@@ -346,6 +339,7 @@ for f in range(len(fn_list)):
                     print ('Status', r[0].status_code, zipFile)
                     log.write(datetime.now().strftime('%Y-%m-%d %H:%M:%S, ') + 
                               FilePath +' uploaded' + '\n')
+                    CouncilOrdinance.append(Identifier) # Note to avoid further uploads
 
                 except Exception as e:
                     print('Upload Failed on ', zipFile, e.message, e.args)
@@ -368,3 +362,5 @@ for f in range(len(fn_list)):
 
 log.close()
 xlink.close()
+pickle.dump(CouncilOrdinance, open(picklefile, "wb"),
+            protocol=pickle.HIGHEST_PROTOCOL)
