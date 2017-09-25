@@ -160,7 +160,8 @@ for v in sorted(vid):
     if processyear in v[0:2]:
         processlist.append(v)
 
-for v in ['83-18', '83-41', '95-1','91-42','94-43','95-26','95-30','00-24']:
+for v in ['95-1']:
+#for v in ['83-18', '83-41', '95-1','91-42','94-43','95-26','95-30','00-24']:
 #for v in processlist :
     filelist = vid[v]
     vidDir = filelist[0]

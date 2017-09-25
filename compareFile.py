@@ -22,7 +22,6 @@ def build_Bills_dict (Bills):
                         Bills[key] = bill_data
     return Bills
 
-
 Bills = {}
 wb = load_workbook(filename = '/media/smb/Scanned Ordinance Index.xlsx')
 Bills = build_Bills_dict (Bills)
@@ -55,6 +54,8 @@ for fn in files:
     prefix = filename.split('-')[0]
     if prefix in ['CR','CS','CO']:
         continue # this is a council proceeding
+    if ' .TIF' in filename.upper():
+        print ('space before .TIF')
 
     fn_list.append(fn.split('/')[-1])
     dirlist.append(fn.rstrip(fn.split('/')[-1]))

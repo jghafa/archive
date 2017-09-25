@@ -340,6 +340,8 @@ for f in range(len(fn_list)):
                     log.write(datetime.now().strftime('%Y-%m-%d %H:%M:%S, ') + 
                               FilePath +' uploaded' + '\n')
                     CouncilOrdinance.append(Identifier) # Note to avoid further uploads
+                    pickle.dump(CouncilOrdinance, open(picklefile, "wb"),
+                                protocol=pickle.HIGHEST_PROTOCOL)
 
                 except Exception as e:
                     print('Upload Failed on ', zipFile, e.message, e.args)
@@ -362,5 +364,3 @@ for f in range(len(fn_list)):
 
 log.close()
 xlink.close()
-pickle.dump(CouncilOrdinance, open(picklefile, "wb"),
-            protocol=pickle.HIGHEST_PROTOCOL)
