@@ -14,8 +14,6 @@ import subprocess
 #from pathlib import Path
 import os
 
-# True for uploading files, false for debugging
-update_IA = False
 
 parser = argparse.ArgumentParser()
 parser.add_argument("coll_name", nargs='*', default=['1970']) 
@@ -142,8 +140,10 @@ except (OSError, IOError) as e:
     pickle.dump(CouncilOrdinance, open(picklefile, "wb"), protocol=pickle.HIGHEST_PROTOCOL)
 
 # open log file
+targetDir='/media/smb/PDFs/'+ input_name[0] + '/'
+os.makedirs(targetDir, exist_ok=True)
 log = open('../Documents/AXlog.txt', 'a')
-AXlink = open('../Documents/AXlink.txt', 'a')
+AXlink = open(targetDir+'AXUpload-'+input_name[0]+'.txt', 'w')
 log.write(datetime.now().strftime('%Y-%m-%d %H:%M:%S, ') + 'Start UpLoad \n')
 
 #wb = load_workbook(filename =
@@ -204,6 +204,10 @@ for f in range(len(fn_list)):
             #print('File Path',FilePath)
             #print(Bills[bill])
 
+            item = get_item(Identifier)
+            item.download(glob_pattern='*.pdf',destdir=targetDir,no_directory=True,retries=10)
+
+
             meta =(        Bills[bill][0]
                     +'|'  +Bills[bill][1]
                     +'|'  +Bills[bill][2]
@@ -214,16 +218,7 @@ for f in range(len(fn_list)):
                     +'\n')
             #print(meta)
             AXlink.write(meta)
-
-            convertList = glob.glob(dirlist[f] + bill + '*.[tT][iI][fF]')  
-            for c in convertList:
-                #print(c)
-                AXlink.write(c+'\n')
-
-            bpList = glob.glob('/media/smb/Uploads/Blueprints/'+bill+'*.[tT][iI][fF]')
-            for bp in bpList:
-                #print(bp)
-                AXlink.write(bp+'\n')
+            AXlink.write(targetDir+bill+'.PDF'+'\n')
 
         
     except KeyError:
