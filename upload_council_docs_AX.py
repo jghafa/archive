@@ -218,7 +218,7 @@ for f in range(len(fn_list)):
                     +'\n')
             #print(meta)
             AXlink.write(meta)
-            AXlink.write(targetDir+bill+'.PDF'+'\n')
+            AXlink.write('@@'+targetDir+bill+'.PDF'+'\n')
 
         
     except KeyError:
