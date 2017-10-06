@@ -6,6 +6,11 @@ Update the pickle files
 from internetarchive import *
 import pickle
 
+picklefile = 'CouncilProceedings.pickle'
+print ('Reading citycouncilproceeding collection')
+CouncilProceedings = [item.metadata['identifier'] for item in search_items('collection:(citycouncilproceedings)').iter_as_items()]
+print('Creating the pickle file')
+pickle.dump(CouncilProceedings, open(picklefile, "wb"), protocol=pickle.HIGHEST_PROTOCOL)
 
 picklefile = 'CouncilOrdinance.pickle'
 print ('Reading citycouncilordinance collection')

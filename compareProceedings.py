@@ -76,7 +76,7 @@ for fn in files:
     dirlist.append(fn.rstrip(fn.split('/')[-1]))
     SMBlist.append(fn.split('/')[-1].split('.')[0])
 
-IAlist=[x.lstrip('FWCityCouncil-Proceedings-') for x in CouncilProceedings]
+IAlist=[x[26:29]+x[34:]+x[28:33] for x in CouncilProceedings]
 
 SMBlist.sort()
 IAlist.sort()
@@ -86,6 +86,9 @@ SMBindex = IAindex = XLSindex = 0
 SMBlen = len(SMBlist)
 IAlen = len(IAlist)
 XLSlen = len(XLSlist)
+
+#print('CouncilProceedings=', CouncilProceedings)
+#print('IAlist=', IAlist)
 
 while SMBindex < SMBlen and IAindex < IAlen and XLSindex < XLSlen:
     if (SMBlist[SMBindex] == IAlist[IAindex]

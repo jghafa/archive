@@ -18,15 +18,15 @@ import os
 update_IA = True
 
 parser = argparse.ArgumentParser()
-parser.add_argument("coll_name", nargs='*', default=['CO-1995-01-03']) 
+parser.add_argument("coll_name", nargs='*', default=['1970']) 
 args = parser.parse_args()
 # input_name is list of strings
 input_name = args.coll_name
 
 #Name of the Internet Archive collection target for uploads
-TestIdSuffix = '-test'   #Set to '' when testing is done
-CollectionName = 'test_collection'
-#CollectionName = 'citycouncilproceedings'
+TestIdSuffix = ''   #Set to '' when testing is done
+#CollectionName = 'test_collection'
+CollectionName = 'citycouncilproceedings'
 
 # Title of the item in the collection.  This is the one people see.
 Title = ''
@@ -146,7 +146,7 @@ picklefile = 'CouncilProceedings.pickle'
 try:
     CouncilProceedings = pickle.load(open(picklefile, "rb"))
 except (OSError, IOError) as e:
-    print ('Reading citycouncilordinance collection')
+    print ('Reading citycouncilproceeding collection')
     CouncilProceedings = [item.metadata['identifier'] for item in search_items('collection:(citycouncilproceedings)').iter_as_items()]
     pickle.dump(CouncilProceedings, open(picklefile, "wb"), protocol=pickle.HIGHEST_PROTOCOL)
 
@@ -233,9 +233,8 @@ for f in range(len(fn_list)):
             continue
 
         print('Identifier',Identifier,datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-
         # checking the year in the file path against a list years to be processed
-        if dirlist[f].split('/')[4] in input_name or p_name in input_name:
+        if dirlist[f].split('/')[4][:4] in input_name or p_name in input_name:
             FilePath = dirlist[f]+fn_list[f]
             print('File Path',FilePath)
                             
@@ -293,7 +292,7 @@ for f in range(len(fn_list)):
                 try:
                     r = upload(Identifier, files=zipFile, metadata=md, 
                                retries=30, checksum=True) #retries_sleep=20,
-                    print ('Status', r[0].status_code, zipFile)
+                    print (r[0].status_code, zipFile)
                     log.write(datetime.now().strftime('%Y-%m-%d %H:%M:%S, ') + 
                               FilePath +' uploaded' + '\n')
                     picklefile = 'CouncilProceedings.pickle'
