@@ -11,9 +11,6 @@ import pickle
 
 tmpDir = '/home/jghafa/archive/tmp/'
 
-# True for uploading files, false for debugging
-update_IA = False
-
 #Name of the Internet Archive collection target for uploads
 CollectionName = 'citycouncilordinances'
 
@@ -109,14 +106,6 @@ for c in CouncilOrdinance:
     if IntroID in CouncilVideo:
         IntroLink += brk
     else:
-        if Bills[bill][4].year in range(1981,2007):
-            xlink.write('Missing Intro Video,'+
-              hyperlink(dirlist[f].replace('/media/smb/','\\\\vs-videostorage\\City Council Ordinances\\').replace('/','\\') + fn_list[f],bill)+ ',' +
-              hyperlink('https://archive.org/details/FWCityCouncil-'+intro, intro) + ',' +
-              '"=datevalue(indirect(address(row(),column()-1,4)))"' + ',' +                
-              hyperlink('https://archive.org/details/FWCityCouncil-'+final, final) + ',' +
-              '"=datevalue(indirect(address(row(),column()-1,4)))"' + ',' +                
-              '\n')
         IntroLink = ''
                     
     FinalID = 'FWCityCouncil-'+final
@@ -127,14 +116,6 @@ for c in CouncilOrdinance:
     if FinalID in CouncilVideo:
         FinalLink += brk
     else:
-        if Bills[bill][5].year in range(1981,2007):
-            xlink.write('Missing Final Video,'+
-              hyperlink(dirlist[f].replace('/media/smb/','\\\\vs-videostorage\\City Council Ordinances\\').replace('/','\\') + fn_list[f],bill)+ ',' +
-              hyperlink('https://archive.org/details/FWCityCouncil-'+intro, intro) + ',' +
-              '"=datevalue(indirect(address(row(),column()-1,4)))"' + ',' +                
-              hyperlink('https://archive.org/details/FWCityCouncil-'+final, final) + ',' +
-              '"=datevalue(indirect(address(row(),column()-1,4)))"' + ',' +                
-              '\n')
         FinalLink = ''
 
     if Bills[bill][6] is None:

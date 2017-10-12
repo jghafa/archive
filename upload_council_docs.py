@@ -15,7 +15,7 @@ import os
 update_IA = True
 
 parser = argparse.ArgumentParser()
-parser.add_argument("coll_name", nargs='*', default=['1969']) 
+parser.add_argument("coll_name", nargs='*', default=['1995']) 
 args = parser.parse_args()
 # input_name is list of strings
 input_name = args.coll_name
