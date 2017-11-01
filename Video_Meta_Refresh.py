@@ -113,7 +113,6 @@ wb = load_workbook(filename = '/media/smb/Scanned Ordinance Index.xlsx')
 Bills = {}
 Bills = build_Bills_dict (Bills)
 
-print('intro final')
 Intro = {}
 Final = {}
 for p in Bills:
@@ -124,10 +123,11 @@ for p in Bills:
     Finaldate= (str(Bills[p][5].year)  +'-'+
                 str(Bills[p][5].month) +'-'+
                 str(Bills[p][5].day))
+    # setdefault avoids the use of defaultdict
     Intro.setdefault(Introdate,[]).append(p)
     Final.setdefault(Finaldate,[]).append(p)
 
-x=input('p')
+#x=input('p')
 
 # loop through video
 for v in CouncilVideo:
@@ -138,37 +138,55 @@ for v in CouncilVideo:
     p_date = p_mon + '-' + p_day + '-' + p_yr
     v_date = p_yr + '-' + p_mon + '-' + p_day
     o_date = p_yr[2:] + '-' + p_mon + '-' + p_day
-    print (v, p_date, v_date, o_date)
+    #print (v)
     #x=input('next')
     #look for a matching ordinance
-    if 'A-'+o_date in Bills:
-        print('Found', 'A-'+v_date)
-    if 'G-'+o_date in Bills:
-        print('Found', 'G-'+v_date)
-    if 'R-'+o_date in Bills:
-        print('Found', 'R-'+v_date)
-    if 'S-'+o_date in Bills:
-        print('Found', 'S-'+v_date)
-    if 'X-'+o_date in Bills:
-        print('Found', 'X-'+v_date)
-    if 'Z-'+o_date in Bills:
-        print('Found', 'Z-'+v_date)
+    Notes = ''
+    if v_date in Intro:
+        Notes += ('Introductions on '+v_date+brk)
+        sortedlist = sorted(Intro[v_date])
+        for ord_num in sortedlist:
+            Notes += (Link(ord_num,
+                       'https://archive.org/details/FWCityCouncil-Ordinance-'+ord_num,
+                       ord_num + ' ' + BillType[ord_num.split('-')[0]])+brk)
+    if v_date in Final:
+        Notes += (brk+'Final Disposition on '+v_date+brk)
+        sortedlist = sorted(Final[v_date])
+        for ord_num in sortedlist:
+            Notes += (Link(ord_num,
+                       'https://archive.org/details/FWCityCouncil-Ordinance-'+ord_num,
+                       ord_num + ' ' + BillType[ord_num.split('-')[0]])+brk)
     #look for a matching proceeding
     if 'CO-'+p_date in Procs:
-        print('Found', 'CO-'+v_date)
-        print(Link('Organizational Council Proceedings '+v_date,
+        Notes += (brk+Link('Organizational Council Proceedings '+v_date,
                    'https://archive.org/details/FWCityCouncil-Proceedings-'+
                    'CO-'+v_date,
-                   'Organizational Council Proceedings '+v_date)+brk)
+                   'Council Proceedings '+v_date+' ,Organizational')+brk)
     if 'CR-'+p_date in Procs:
-        print('Found', 'CR-'+v_date)
-        print(Link('Regular Council Proceedings '+v_date,
+        Notes += (brk+Link('Regular Council Proceedings '+v_date,
                    'https://archive.org/details/FWCityCouncil-Proceedings-'+
                    'CR-'+v_date,
-                   'Regular Council Proceedings '+v_date)+brk)
+                   'Council Proceedings '+v_date+', Regular')+brk)
     if 'CS-'+p_date in Procs:
-        print('Found', 'CS-'+v_date)
-        print(Link('Special Council Proceedings '+v_date,
+        Notes += (brk+Link('Special Council Proceedings '+v_date,
                    'https://archive.org/details/FWCityCouncil-Proceedings-'+
                    'CS-'+v_date,
-                   'Special Council Proceedings '+v_date)+brk)
+                   'Council Proceedings '+v_date+', Special')+brk)
+    if Notes:
+        #Identifier = 'FWCityCouncil-'+v_date
+        item = get_item(v)
+
+        #print(Notes)
+        #print()
+        try:
+            IAnotes = item.metadata['notes']
+        except KeyError:
+            IAnotes = ''
+            print(v,'Notes ***Missing***')
+
+        if Notes == IAnotes:
+            pass
+        else:
+            # Update Notes
+            r = item.modify_metadata(dict(notes=Notes))
+            print (r,' IA metadata updated',v)
