@@ -118,11 +118,11 @@ Final = {}
 for p in Bills:
     #print (p, Bills[p][4], Bills[p][5])
     Introdate= (str(Bills[p][4].year)  +'-'+
-                str(Bills[p][4].month) +'-'+
-                str(Bills[p][4].day))
+                str(Bills[p][4].month).zfill(2) +'-'+
+                str(Bills[p][4].day).zfill(2))
     Finaldate= (str(Bills[p][5].year)  +'-'+
-                str(Bills[p][5].month) +'-'+
-                str(Bills[p][5].day))
+                str(Bills[p][5].month).zfill(2) +'-'+
+                str(Bills[p][5].day).zfill(2))
     # setdefault avoids the use of defaultdict
     Intro.setdefault(Introdate,[]).append(p)
     Final.setdefault(Finaldate,[]).append(p)
@@ -138,7 +138,7 @@ for v in CouncilVideo:
     p_date = p_mon + '-' + p_day + '-' + p_yr
     v_date = p_yr + '-' + p_mon + '-' + p_day
     o_date = p_yr[2:] + '-' + p_mon + '-' + p_day
-    #print (v)
+    print (v)
     #x=input('next')
     #look for a matching ordinance
     Notes = ''
@@ -189,4 +189,4 @@ for v in CouncilVideo:
         else:
             # Update Notes
             r = item.modify_metadata(dict(notes=Notes))
-            print (r,' IA metadata updated',v)
+            print (v,r,' IA metadata updated')

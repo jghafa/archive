@@ -55,7 +55,7 @@ for fn in files:
     if prefix in ['CR','CS','CO']:
         continue # this is a council proceeding
     if ' .TIF' in filename.upper():
-        print ('space before .TIF')
+        print ('space before .TIF',fn)
 
     fn_list.append(fn.split('/')[-1])
     dirlist.append(fn.rstrip(fn.split('/')[-1]))
