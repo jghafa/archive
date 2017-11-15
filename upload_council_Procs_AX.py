@@ -14,7 +14,7 @@ import subprocess
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument("coll_name", nargs='*', default=['1970']) 
+parser.add_argument("coll_name", nargs='*', default=['1969']) 
 args = parser.parse_args()
 input_name = args.coll_name
 
@@ -131,7 +131,7 @@ for c in CouncilProceedings:
     item = get_item(c)
     item.download(glob_pattern='*.pdf',destdir=targetDir,no_directory=True,retries=10)
 
-    meta =(       p_mon+'-'+p_day+'-'+p_yr
+    meta =(       p_mon+'/'+p_day+'/'+p_yr
             +'|' +ProcType[p_type]
             +'|' +Procs[spd_name].replace('\n',' ')
             +'|' 

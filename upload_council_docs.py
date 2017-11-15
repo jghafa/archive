@@ -8,14 +8,13 @@ import argparse
 from datetime import datetime
 from time import strftime
 import subprocess
-#from pathlib import Path
 import os
 
 # True for uploading files, false for debugging
-update_IA = True
+update_IA = False
 
 parser = argparse.ArgumentParser()
-parser.add_argument("coll_name", nargs='*', default=['1995']) 
+parser.add_argument("coll_name", nargs='*', default=['1974']) 
 args = parser.parse_args()
 # input_name is list of strings
 input_name = args.coll_name
@@ -138,18 +137,6 @@ except (OSError, IOError) as e:
     CouncilOrdinance = [item.metadata['identifier'] for item in search_items('collection:(citycouncilordinances)').iter_as_items()]
     pickle.dump(CouncilOrdinance, open(picklefile, "wb"), protocol=pickle.HIGHEST_PROTOCOL)
 
-#delete this after all blueprints uploaded
-#bl_list= ['FWCityCouncil-Ordinance-Z-69-11-32', 'FWCityCouncil-Ordinance-Z-70-01-10', 'FWCityCouncil-Ordinance-Z-70-06-30', 'FWCityCouncil-Ordinance-Z-70-08-36', 'FWCityCouncil-Ordinance-Z-69-12-03', 'FWCityCouncil-Ordinance-Z-69-11-16', 'FWCityCouncil-Ordinance-Z-70-03-33', 'FWCityCouncil-Ordinance-Z-70-03-34', 'FWCityCouncil-Ordinance-Z-70-03-35', 'FWCityCouncil-Ordinance-Z-70-01-11', 'FWCityCouncil-Ordinance-Z-70-11-13', 'FWCityCouncil-Ordinance-Z-69-12-05', 'FWCityCouncil-Ordinance-Z-70-07-17', 'FWCityCouncil-Ordinance-Z-70-07-19', 'FWCityCouncil-Ordinance-G-71-09-18', 'FWCityCouncil-Ordinance-Z-95-06-07', 'FWCityCouncil-Ordinance-Z-95-07-03']
-
-#for b in CouncilOrdinance:
-#    if b in bl_list:
-#        print ('found first bp', b)
-#        CouncilOrdinance.remove(b)
-#for b in CouncilOrdinance:
-#    if b in bl_list:
-#        print ('found second bp', b)
-
-#z=input('blueprint')
 
 # open log file
 log = open('../Documents/log.txt', 'a')

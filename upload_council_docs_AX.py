@@ -212,8 +212,8 @@ for f in range(len(fn_list)):
                     +'|'  +Bills[bill][1]
                     +'|'  +Bills[bill][2]
                     +'|||'+Bills[bill][3].replace('\n',' ')[0:253]
-                    +'|||||||'+Bills[bill][4].strftime("%m-%d-%Y")
-                    +'|'+Bills[bill][5].strftime("%m-%d-%Y")
+                    +'|||||||'+Bills[bill][4].strftime("%m/%d/%Y")
+                    +'|'+Bills[bill][5].strftime("%m/%d/%Y")
                     +'|'+SPDnotes+'|'
                     +'\n')
             #print(meta)
