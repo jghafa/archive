@@ -11,7 +11,7 @@ import subprocess
 import os
 
 # True for uploading files, false for debugging
-update_IA = False
+update_IA = True
 
 parser = argparse.ArgumentParser()
 parser.add_argument("coll_name", nargs='*', default=['1974']) 

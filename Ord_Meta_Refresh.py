@@ -79,7 +79,7 @@ Bills = build_Bills_dict (Bills)
 
 # Read the Ordinance metadata from IA
 for c in CouncilOrdinance:
-    bill = c[-10:]
+    bill = c.split('FWCityCouncil-Ordinance-')[1]
 
     final = Bills[bill][5].strftime("%Y-%m-%d")
 
