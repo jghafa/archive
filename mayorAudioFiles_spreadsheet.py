@@ -1,17 +1,12 @@
 #!/usr/bin/python3
 """
 Upload SoundCloud Wav files to IA
-
-1) Get the files from \\san\gov\office of the mayor\office of the mayor\PIO\RadioSpots
-2) Copy to a spot accessable fro here, like /media/smb/TestDVD/MayorAudio/
-3) Make sure the file modification dates are correct for IA
-4) Run mayorAudioFiles.py
+This version uses a spreadsheet to hold creations dates for the files
 """
 
-#import shutil
+import shutil
 import glob
 import os
-import datetime
 from internetarchive import *
 
 PATH = '/media/smb/TestDVD/MayorAudio/'
@@ -46,21 +41,24 @@ vidLicense = 'http://creativecommons.org/licenses/by-nc-sa/4.0/'
 #metadata for search fields
 vidSubject = ['Fort Wayne','Local Government','Mayor']
 
+f = open(PATH + 'list2.csv', mode='r')
 
-for file_name in glob.glob(PATH + '*.[wW][aA][vV]'):
-    try:
-        mtime = os.path.getmtime(file_name)
-    except OSError:
-        print ('Not uploading ',file_name)
+for line in f:
+    filename = line.split(',')[0]
+    date = line.split(',')[1].strip()
+    if date == '':
         continue
-    last_modified_date = datetime.datetime.fromtimestamp(mtime)
+    newname = 'RadioSpot '+filename.replace(' ~by MayorFW [soundtake.net]','').replace(';','-')
+    Identifier = newname.replace(' - ','-').replace('- ','-').replace(' ','-').replace('.wav','')
+    shutil.copyfile(PATH+filename, tmpDir+newname)
 
-    newname = 'RadioSpot '+file_name.split('/')[-1]
-    Identifier = newname.replace(',','-').replace(' - ','-').replace('- ','-').replace(' ','-').replace('.wav','')
+    year = date.split('/')[2]
+    month = date.split('/')[0]
+    day = date.split('/')[1]
 
-    vidDate = datetime.datetime.strftime(last_modified_date,'%Y-%m-%d')
+    vidDate = year+ '-' +month.zfill(2)+ '-' +day.zfill(2)
     Title = newname.split('.')[0].strip()
-    
+
     md = dict(collection = CollectionName, 
               title      = Title,
               mediatype  = vidmediatype, 
@@ -70,9 +68,19 @@ for file_name in glob.glob(PATH + '*.[wW][aA][vV]'):
               licenseurl = vidLicense, 
               date       = vidDate)
 
+    #print (Identifier)
+    #print (Title)
+    #print (vidDate)
+    #print (md)
+
     try:
-        r = upload(Identifier, files=file_name, metadata=md, 
+        r = upload(Identifier, files=tmpDir+newname, metadata=md, 
                    retries=30, checksum=True) #retries_sleep=20,
-        print ('Status code', r[0].status_code, Identifier)
+        print ('Status code', r[0].status_code, newname)
     except Exception as e:
-        print ('Failed on ', Identifier, e.message, e.args)
+        print ('Failed on ', filename, e.message, e.args)
+
+
+
+    for tmpfile in glob.glob(tmpDir + '*.[wW][aA][vV]'):
+        os.remove(tmpfile)
