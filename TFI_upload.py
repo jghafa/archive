@@ -15,9 +15,9 @@ tmpDir = '/home/jghafa/archive/tmp/'
 Break = '<br>'
 
 #Name of the Internet Archive collection target for uploads
-TestIdPrefix = 'Test3 '   #Set to '' when testing is done
-CollectionName = 'test_collection'
-#CollectionName = 'theaterforideas'
+TestIdPrefix = ''   #Set to '' when testing is done
+#CollectionName = 'test_collection'
+CollectionName = 'theaterforideas'
 
 #Read the spreadsheet for files to upload
 wb = load_workbook(filename = PATH+'TFI.xlsx')
@@ -83,7 +83,7 @@ for row in ws.rows:
     CREDITS     =row[25].value
     
     tempname = TestIdPrefix+'Theater for Ideas - '+FILENAME.split('/')[-1]
-    Identifier = tempname.replace(',','-').replace(' - ','-').replace('- ','-').replace("'",'').replace(' ','-').replace('.mpg','')
+    Identifier = tempname.replace(',','-').replace(' - ','-').replace('- ','-').replace("'",'').replace(':','').replace(' ','-').replace('.mpg','')
 
     vidDate = DATE
     vidTitle = tempname.split('.')[0].split('   ')[0].strip()
@@ -166,4 +166,4 @@ for row in ws.rows:
     except Exception as e:
         print ('Failed on ', Identifier, e.message, e.args)
 
-    x=input('paused')
+    #x=input('paused')
