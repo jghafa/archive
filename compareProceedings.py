@@ -62,7 +62,7 @@ for fn in files:
     if not filename.split('.')[-1].upper() == 'TIF':
         continue # not a bill
     if ' .TIF' in filename.upper():
-        print ('space before .TIF')
+        print (filename, ',space before .TIF')
     p_type = filename.split('-')[0]
     if not p_type in ['CR','CS','CO']:
         continue # this is a council proceeding
