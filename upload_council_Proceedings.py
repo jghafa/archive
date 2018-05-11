@@ -45,8 +45,6 @@ Creator = 'City of Fort Wayne, Indiana'
 License = 'http://creativecommons.org/licenses/by-nc-sa/4.0/'
 Subject = ['Fort Wayne','Local Government','City Council']
 
-
-
 # Key to the Council Proceedings Index spreadsheet
 # Col B, row[1],  Bills[file_name][0], Meeting Type
 # Col C, row[2],  Bills[file_name][1], Date
@@ -153,11 +151,11 @@ except (OSError, IOError) as e:
 
 # open log file
 log = open('../Documents/log.txt', 'a')
-xlink = open('../Documents/Crosslink.txt', 'a')
+#xlink = open('../Documents/Crosslink.txt', 'a')
 log.write(datetime.now().strftime('%Y-%m-%d %H:%M:%S, ') + 'Start UpLoad \n')
-xlink.write(datetime.now().strftime('%Y-%m-%d %H:%M:%S, ') + 'Start UpLoad \n')
+#xlink.write(datetime.now().strftime('%Y-%m-%d %H:%M:%S, ') + 'Start UpLoad \n')
 
-xlink.write('Error,Bill,Intro,Intro Day,Final,Final Day,Notes' '\n')
+#xlink.write('Error,Bill,Intro,Intro Day,Final,Final Day,Notes' '\n')
 
 
 #wb = load_workbook(filename =
@@ -182,6 +180,8 @@ fn_list = []
 for fn in files:
     fn_list.append(fn.split('/')[-1])
     dirlist.append(fn.rstrip(fn.split('/')[-1]))
+
+tmpDir = tempfile.mkdtemp(dir='/home/jghafa/archive/tmp',prefix='Proc-U-')+'/'
     
 print ()
 # loop thru file names
@@ -249,8 +249,6 @@ for f in range(len(fn_list)):
                         date       = MeetDate)
             #print(md)
 
-            tmpDir = '/home/jghafa/archive/tmp/'
-
             convertList = glob.glob(dirlist[f] + file_name + '*.[tT][iI][fF]')
             
             tifnum = 0
@@ -282,6 +280,7 @@ for f in range(len(fn_list)):
             # Zip the TIFs into a single file to upload
             zipFile = tmpDir + Identifier + '_images.zip'
             zipCmd = 'zip ' + zipFile + ' *.[tT][iI][fF]'
+            #print (zipCmd)
             x = subprocess.run([zipCmd],
                      cwd=tmpDir,
                      stdout=subprocess.DEVNULL,
@@ -320,4 +319,5 @@ for f in range(len(fn_list)):
         print(dirlist[f], fn_list[f],'<<<<========== Not Found in spreadsheet')
 
 log.close()
-xlink.close()
+#xlink.close()
+shutil.rmtree(tmpDir)

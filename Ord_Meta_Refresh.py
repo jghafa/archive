@@ -8,8 +8,10 @@ from internetarchive import *
 import os
 import glob
 import pickle
+import tempfile
+import shutil
 
-tmpDir = '/home/jghafa/archive/tmp/'
+tmpDir = tempfile.mkdtemp(dir='/home/jghafa/archive/tmp',prefix='Ord-M-')+'/'
 
 #Name of the Internet Archive collection target for uploads
 CollectionName = 'citycouncilordinances'
@@ -190,8 +192,7 @@ for c in CouncilOrdinance:
         r = item.upload(files=tmpDir+c+'_scandata.xml',retries=10)
         print (r,' XML updated')
 
-
-    #z = input('next')
-
     for tmpfile in glob.glob(tmpDir + '*.[xX][mM][lL]'):
         os.remove(tmpfile)
+
+shutil.rmtree(tmpDir)

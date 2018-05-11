@@ -161,6 +161,8 @@ Bills = build_Bills_dict (Bills)
 # Read the file names
 PATH = '/media/smb/Uploads'
 
+tmpDir = tempfile.mkdtemp(dir='/home/jghafa/archive/tmp',prefix='Ord-U-')+'/'
+
 # get all the files in and under PATH
 files = [file for file in glob.glob(PATH + '/**/*.*', recursive=True)]
 
@@ -282,8 +284,6 @@ for f in range(len(fn_list)):
                         date       = final)
             #print(md)
 
-            tmpDir = '/home/jghafa/archive/tmp/'
-
             convertList = glob.glob(dirlist[f] + bill + '*.[tT][iI][fF]')
             
             tifnum = 0
@@ -351,3 +351,4 @@ for f in range(len(fn_list)):
 
 log.close()
 xlink.close()
+shutil.rmtree(tmpDir)
