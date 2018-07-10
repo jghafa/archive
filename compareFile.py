@@ -17,9 +17,19 @@ def build_Bills_dict (Bills):
                     bill_data = (row[1].value,row[2].value,row[3].value,row[6].value,row[13].value,row[14].value,row[15].value,ws)
                     key = row[1].value.strip()
                     try:
-                        print (Bills[key][0],'duplicate key')
+                        print (Bills[key][0],',duplicate key')
                     except KeyError:
                         Bills[key] = bill_data
+                    if Bills[key][1] is None:
+                        print (Bills[key][0],',Missing Ord Number')
+                    if Bills[key][2] is None:
+                        print (Bills[key][0],',Missing Bill Status')
+                    if Bills[key][3] is None:
+                        print (Bills[key][0],',Missing Bill Desc')
+                    if Bills[key][4] is None:
+                        print (Bills[key][0],',Missing Intro date')
+                    if Bills[key][5] is None:
+                        print (Bills[key][0],',Missing Final date')
     return Bills
 
 Bills = {}
@@ -72,6 +82,8 @@ SMBlen = len(SMBlist)
 IAlen = len(IAlist)
 XLSlen = len(XLSlist)
 
+print('Ordinance,Status,Desc')
+
 while SMBindex < SMBlen and IAindex < IAlen and XLSindex < XLSlen:
     if (SMBlist[SMBindex] == IAlist[IAindex]
         and SMBlist[SMBindex] == XLSlist[XLSindex]):
@@ -86,7 +98,7 @@ while SMBindex < SMBlen and IAindex < IAlen and XLSindex < XLSlen:
         #SMB and IA match
         if XLSlist[XLSindex] < SMBlist[SMBindex]:
             #XLS low
-            print(XLSlist[XLSindex],',XLS missing SMB & IA,',Bills[XLSlist[XLSindex]][-1])
+            print(XLSlist[XLSindex],',XLS missing SMB & IA,Metadata Only',Bills[XLSlist[XLSindex]][-1])
             XLSindex += 1
         else:
             print(SMBlist[SMBindex],',SMB & IA missing XLS, No Metadata')
@@ -98,10 +110,10 @@ while SMBindex < SMBlen and IAindex < IAlen and XLSindex < XLSlen:
         #SMB and IA match
         if IAlist[IAindex] < SMBlist[SMBindex]:
             #IA low
-            print(IAlist[IAindex],',IA missing SMB & XLS, No Metadata')
+            print(IAlist[IAindex],',IA missing SMB & XLS, IA Only')
             IAindex += 1
         else:
-            print(SMBlist[SMBindex],',SMB & XLS missing IA,',Bills[XLSlist[XLSindex]][-1])
+            print(SMBlist[SMBindex],',SMB & XLS missing IA,Missing IA',Bills[XLSlist[XLSindex]][-1])
             SMBindex += 1
             XLSindex += 1
         continue
@@ -110,7 +122,7 @@ while SMBindex < SMBlen and IAindex < IAlen and XLSindex < XLSlen:
         #IA and XLS match
         if  SMBlist[SMBindex] < IAlist[IAindex]:
             #SMB low
-            print(SMBlist[SMBindex],',SMB missing IA & XLS, No Metadata')
+            print(SMBlist[SMBindex],',SMB missing IA & XLS, Local Only')
             SMBindex += 1
         else:
             print(IAlist[IAindex],',IA & XLS missing SMB,',Bills[XLSlist[XLSindex]][-1])
@@ -121,15 +133,15 @@ while SMBindex < SMBlen and IAindex < IAlen and XLSindex < XLSlen:
     #no match, find the low ordinance
     lowOrd = min(SMBlist[SMBindex],XLSlist[XLSindex],IAlist[IAindex])
     if lowOrd == SMBlist[SMBindex]:
-        print(SMBlist[SMBindex],',SMB missing IA & XLS, No Metadata')
+        print(SMBlist[SMBindex],',SMB missing IA & XLS, Local Only')
         SMBindex += 1
 
     if lowOrd == XLSlist[XLSindex]:
-        print(XLSlist[XLSindex],',XLS missing SMB & IA,',Bills[XLSlist[XLSindex]][-1])
+        print(XLSlist[XLSindex],',XLS missing SMB & IA,Metadata Only',Bills[XLSlist[XLSindex]][-1])
         XLSindex += 1
 
     if lowOrd == IAlist[IAindex]:
-        print(IAlist[IAindex],',IA missing SMB & XLS, No Metadata')
+        print(IAlist[IAindex],',IA missing SMB & XLS, IA Only')
         IAindex += 1
 
 print('SMB',SMBindex,SMBlen)

@@ -90,6 +90,8 @@ XLSlen = len(XLSlist)
 #print('CouncilProceedings=', CouncilProceedings)
 #print('IAlist=', IAlist)
 
+print('Proceedings,Status,Desc')
+
 while SMBindex < SMBlen and IAindex < IAlen and XLSindex < XLSlen:
     if (SMBlist[SMBindex] == IAlist[IAindex]
         and SMBlist[SMBindex] == XLSlist[XLSindex]):
@@ -104,7 +106,7 @@ while SMBindex < SMBlen and IAindex < IAlen and XLSindex < XLSlen:
         #SMB and IA match
         if XLSlist[XLSindex] < SMBlist[SMBindex]:
             #XLS low
-            print(XLSlist[XLSindex],',XLS missing SMB & IA,')
+            print(XLSlist[XLSindex],',XLS missing SMB & IA,Metadata Only')
             XLSindex += 1
         else:
             print(SMBlist[SMBindex],',SMB & IA missing XLS, No Metadata')
@@ -116,7 +118,7 @@ while SMBindex < SMBlen and IAindex < IAlen and XLSindex < XLSlen:
         #SMB and IA match
         if IAlist[IAindex] < SMBlist[SMBindex]:
             #IA low
-            print(IAlist[IAindex],',IA missing SMB & XLS, No Metadata')
+            print(IAlist[IAindex],',IA missing SMB & XLS,Local only')
             IAindex += 1
         else:
             print(SMBlist[SMBindex],',SMB & XLS missing IA,')
@@ -139,15 +141,15 @@ while SMBindex < SMBlen and IAindex < IAlen and XLSindex < XLSlen:
     #no match, find the low ordinance
     lowOrd = min(SMBlist[SMBindex],XLSlist[XLSindex],IAlist[IAindex])
     if lowOrd == SMBlist[SMBindex]:
-        print(SMBlist[SMBindex],',SMB missing IA & XLS, No Metadata')
+        print(SMBlist[SMBindex],',SMB but not IA & XLS,Local Only')
         SMBindex += 1
 
     if lowOrd == XLSlist[XLSindex]:
-        print(XLSlist[XLSindex],',XLS missing SMB & IA,')
+        print(XLSlist[XLSindex],',XLS missing SMB & IA,Metadata Only')
         XLSindex += 1
 
     if lowOrd == IAlist[IAindex]:
-        print(IAlist[IAindex],',IA missing SMB & XLS, No Metadata')
+        print(IAlist[IAindex],',IA missing SMB & XLS,IA only')
         IAindex += 1
 
 print('SMB',SMBindex,SMBlen)
@@ -157,17 +159,17 @@ print('XLS',XLSindex,XLSlen)
 if (IAindex == IAlen):
     while SMBindex < SMBlen and XLSindex < XLSlen:
         if XLSlist[XLSindex] == SMBlist[SMBindex]:
-            print(SMBlist[SMBindex],',SMB & XLS but not IA,')
+            print(SMBlist[SMBindex],',SMB & XLS but not IA,Ready to upload')
             SMBindex += 1
             XLSindex += 1
             continue
             
         if XLSlist[XLSindex] < SMBlist[SMBindex]:
             #XLS low
-            print(XLSlist[XLSindex],',XLS but not SMB & IA,')
+            print(XLSlist[XLSindex],',XLS but not SMB & IA,Metadata Only')
             XLSindex += 1
         else:
-            print(SMBlist[SMBindex],',SMB but not IA & XLS, No Metadata')
+            print(SMBlist[SMBindex],',SMB but not IA & XLS,Local Only')
             SMBindex += 1
 
 print('SMB',SMBindex,SMBlen)
@@ -175,10 +177,10 @@ print('IA',IAindex,IAlen)
 print('XLS',XLSindex,XLSlen)
 
 while SMBindex < SMBlen :
-    print(SMBlist[SMBindex],',SMB & XLS but not IA,')
+    print(SMBlist[SMBindex],',SMB & XLS but not IA,Ready to upload')
     SMBindex += 1
             
 while XLSindex < XLSlen:
-    print(XLSlist[XLSindex],',XLS but not SMB & IA,')
+    print(XLSlist[XLSindex],',XLS but not SMB & IA,Metadata Only')
     XLSindex += 1
 
