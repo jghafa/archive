@@ -9,12 +9,13 @@ from datetime import datetime
 from time import strftime
 import subprocess
 import os
+import tempfile
 
 # True for uploading files, false for debugging
 update_IA = True
 
 parser = argparse.ArgumentParser()
-parser.add_argument("coll_name", nargs='*', default=['1974']) 
+parser.add_argument("coll_name", nargs='*', default=['1978']) 
 args = parser.parse_args()
 # input_name is list of strings
 input_name = args.coll_name
@@ -71,6 +72,16 @@ def build_Bills_dict (Bills):
                         print (Bills[key][0],'duplicate key')
                     except KeyError:
                         Bills[key] = bill_data
+                    if Bills[key][1] is None:
+                        print (Bills[key][0],',Missing Ord Number')
+                    if Bills[key][2] is None:
+                        print (Bills[key][0],',Missing Bill Status')
+                    if Bills[key][3] is None:
+                        print (Bills[key][0],',Missing Bill Desc')
+                    if Bills[key][4] is None:
+                        print (Bills[key][0],',Missing Intro date')
+                    if Bills[key][5] is None:
+                        print (Bills[key][0],',Missing Final date')
     return Bills
 
 def build_Proceedings_dict (Proceedings, sheet):
@@ -351,4 +362,3 @@ for f in range(len(fn_list)):
 
 log.close()
 xlink.close()
-shutil.rmtree(tmpDir)

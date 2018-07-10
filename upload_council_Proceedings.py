@@ -11,8 +11,9 @@ import argparse
 from datetime import datetime
 from time import strftime
 import subprocess
-#from pathlib import Path
 import os
+import shutil
+import tempfile
 
 # True for uploading files, false for debugging
 update_IA = True
@@ -73,6 +74,16 @@ def build_Bills_dict (Bills):
                         print (Bills[key][0],'duplicate key')
                     except KeyError:
                         Bills[key] = bill_data
+                    if Bills[key][1] is None:
+                        print (Bills[key][0],',Missing Ord Number')
+                    if Bills[key][2] is None:
+                        print (Bills[key][0],',Missing Bill Status')
+                    if Bills[key][3] is None:
+                        print (Bills[key][0],',Missing Bill Desc')
+                    if Bills[key][4] is None:
+                        print (Bills[key][0],',Missing Intro date')
+                    if Bills[key][5] is None:
+                        print (Bills[key][0],',Missing Final date')
     return Bills
 
 def build_Proceedings_dict (Proceedings, sheet):
@@ -193,23 +204,31 @@ for f in range(len(fn_list)):
         continue  # not a bill
     if 'Blueprint' in dirlist[f]:
         continue  # Skip the blueprints, they are batched with the primary
-    p_type = file_name.split('-')[0]
+    proc_name = file_name.split(' ')[0]
+    p_type = proc_name.split('-')[0]
     if not p_type in ['CR','CS','CO']:
         continue # this is a council proceeding
-    p_mon  = file_name.split('-')[1]
-    p_day  = file_name.split('-')[2]
-    p_yr   = file_name.split('-')[3]
+    p_mon  = proc_name.split('-')[1]
+    p_day  = proc_name.split('-')[2]
+    p_yr   = proc_name.split('-')[3]
 
     p_name = p_type + '-' + p_yr + '-' + p_mon + '-' + p_day
     Identifier = 'FWCityCouncil-Proceedings-'+p_name+TestIdSuffix
     Title = 'Fort Wayne Council Proceedings '+p_name
     #print (Procs[file_name])
 
+#    if ' ' in Identifier:
+#        print (Identifier)
+
+#    if 'CR-12-11-1979' in file_name:
+#        print(file_name)
+#        print(proc_name)
+#        print (Identifier)
     try:
-        if Procs[file_name] is None:
+        if Procs[proc_name] is None:
             SPDnotes = ''
         else:
-            SPDnotes = Procs[file_name]
+            SPDnotes = Procs[proc_name]
 
         MeetDate = p_yr + '-' + p_mon + '-' + p_day
         MeetID = 'FWCityCouncil-'+ MeetDate
@@ -249,7 +268,7 @@ for f in range(len(fn_list)):
                         date       = MeetDate)
             #print(md)
 
-            convertList = glob.glob(dirlist[f] + file_name + '*.[tT][iI][fF]')
+            convertList = glob.glob(dirlist[f] + proc_name + '*.[tT][iI][fF]')
             
             tifnum = 0
             for c in convertList:
@@ -264,11 +283,11 @@ for f in range(len(fn_list)):
                 tifnum += 1
 
             # Add the blueprints, if needed
-            # should be bill instead of file_name
+            # should be proc_name instead of file_name
             
-            if glob.glob('/media/smb/Uploads/Blueprints/'+file_name+'*.[tT][iI][fF]'):
+            if glob.glob('/media/smb/Uploads/Blueprints/'+proc_name+'*.[tT][iI][fF]'):
                 convertCmd = ('convert ' + '/media/smb/Uploads/Blueprints/'
-                              + file_name +'*.[tT][iI][fF]'
+                              + proc_name +'*.[tT][iI][fF]'
                               +  ' ' + p_name + '-B%03d.tif' )
                 #print(convertCmd)
                 x = subprocess.run( [convertCmd],
