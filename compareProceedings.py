@@ -9,7 +9,7 @@ import glob
 
 def build_Proceedings_dict (Proceedings, sheet):
     """ Read Excel Ordinance data sheet and append it to a dictionary"""
-    Valid_Types = ['Council Proceeding','Other','Special']
+    Valid_Types = ['Council Proceeding','Other','Special','Index']
     ws = wb[sheet]
     for row in ws.rows:
         # ignore rows where column B is not a valid meeting type
@@ -20,7 +20,7 @@ def build_Proceedings_dict (Proceedings, sheet):
                 key =('CR-' + str(row[2].value.month).zfill(2) + '-'
                             + str(row[2].value.day).zfill(2)+ '-'
                             + str(row[2].value.year))
-            # Organzational Meeting    
+            # Organzational Meeting
             elif row[1].value == 'Other':
                 key =('CO-' + str(row[2].value.month).zfill(2) + '-'
                             + str(row[2].value.day).zfill(2)+ '-'
@@ -30,18 +30,28 @@ def build_Proceedings_dict (Proceedings, sheet):
                 key =('CS-' + str(row[2].value.month).zfill(2) + '-'
                             + str(row[2].value.day).zfill(2)+ '-'
                             + str(row[2].value.year))
+            # Index of Meetings
+            elif row[1].value == 'Index':
+                key =('IN-' + str(row[2].value.month).zfill(2) + '-'
+                            + str(row[2].value.day).zfill(2)+ '-'
+                            + str(row[2].value.year))
             Proceedings[key] = (row[3].value)
     return Proceedings
 
+print('Proceedings,Status,Desc')
+
+# Read the metadata for Proceedings from the spreadsheet
 Procs = {}
 wb = load_workbook(filename = '/media/smb/Council Proceedings Index.xlsx')
 Procs = build_Proceedings_dict (Procs, 'Council Proceedings')
 XLSlist = list(Procs.keys())
 
+# Read in Internet Archive Proceedings
 picklefile = 'CouncilProceedings.pickle'
 try:
     CouncilProceedings = pickle.load(open(picklefile, "rb"))
 except (OSError, IOError) as e:
+    # No pickle file, so read from IA (slow) and then save it as a pickle
     print ('Reading citycouncilordinance collection')
     CouncilProceedings = [item.metadata['identifier'] for item in search_items('collection:(citycouncilproceedings)').iter_as_items()]
     pickle.dump(CouncilProceedings, open(picklefile, "wb"), protocol=pickle.HIGHEST_PROTOCOL)
@@ -63,21 +73,20 @@ for fn in files:
         continue # not a bill
     if ' .TIF' in filename.upper():
         print (filename, ',space before .TIF')
-    p_type = filename.split('-')[0]
-    if not p_type in ['CR','CS','CO']:
-        continue # this is a council proceeding
-    p_mon  = filename.split('-')[1]
-    p_day  = filename.split('-')[2]
-    p_yr   = filename.split('-')[3]
+    p_type = filename.split('-')[0].upper()
+    if p_type in ['CR','CS','CO']:
+        fn_list.append(fn.split('/')[-1])
+        dirlist.append(fn.rstrip(fn.split('/')[-1]))
+        SMBlist.append(fn.split('/')[-1].split('.')[0])
+    elif p_type in ['INDEX']:
+        fn_list.append(fn.split('/')[-1])
+        dirlist.append(fn.rstrip(fn.split('/')[-1]))
+        SMBlist.append('IN-12-31-'+fn.split('/')[-1].split(' ')[0][-4:])
 
-    p_name = p_type + '-' + p_yr + '-' + p_mon + '-' + p_day
+# Convert the IA names to the same format the files and metadata
+IAlist=[x[26:29].upper()+x[34:]+x[28:33] for x in CouncilProceedings]
 
-    fn_list.append(fn.split('/')[-1])
-    dirlist.append(fn.rstrip(fn.split('/')[-1]))
-    SMBlist.append(fn.split('/')[-1].split('.')[0])
-
-IAlist=[x[26:29]+x[34:]+x[28:33] for x in CouncilProceedings]
-
+# Sort the three lists
 SMBlist.sort()
 IAlist.sort()
 XLSlist.sort()
@@ -86,11 +95,6 @@ SMBindex = IAindex = XLSindex = 0
 SMBlen = len(SMBlist)
 IAlen = len(IAlist)
 XLSlen = len(XLSlist)
-
-#print('CouncilProceedings=', CouncilProceedings)
-#print('IAlist=', IAlist)
-
-print('Proceedings,Status,Desc')
 
 while SMBindex < SMBlen and IAindex < IAlen and XLSindex < XLSlen:
     if (SMBlist[SMBindex] == IAlist[IAindex]
@@ -121,7 +125,7 @@ while SMBindex < SMBlen and IAindex < IAlen and XLSindex < XLSlen:
             print(IAlist[IAindex],',IA missing SMB & XLS,Local only')
             IAindex += 1
         else:
-            print(SMBlist[SMBindex],',SMB & XLS missing IA,')
+            print(SMBlist[SMBindex],',SMB & XLS missing IA,Ready to upload')
             SMBindex += 1
             XLSindex += 1
         continue
@@ -141,7 +145,7 @@ while SMBindex < SMBlen and IAindex < IAlen and XLSindex < XLSlen:
     #no match, find the low ordinance
     lowOrd = min(SMBlist[SMBindex],XLSlist[XLSindex],IAlist[IAindex])
     if lowOrd == SMBlist[SMBindex]:
-        print(SMBlist[SMBindex],',SMB but not IA & XLS,Local Only')
+        print(SMBlist[SMBindex],',SMB missing IA & XLS,Local Only')
         SMBindex += 1
 
     if lowOrd == XLSlist[XLSindex]:
@@ -159,17 +163,17 @@ print('XLS',XLSindex,XLSlen)
 if (IAindex == IAlen):
     while SMBindex < SMBlen and XLSindex < XLSlen:
         if XLSlist[XLSindex] == SMBlist[SMBindex]:
-            print(SMBlist[SMBindex],',SMB & XLS but not IA,Ready to upload')
+            print(SMBlist[SMBindex],',SMB & XLS missing IA,Ready to upload')
             SMBindex += 1
             XLSindex += 1
             continue
             
         if XLSlist[XLSindex] < SMBlist[SMBindex]:
             #XLS low
-            print(XLSlist[XLSindex],',XLS but not SMB & IA,Metadata Only')
+            print(XLSlist[XLSindex],',XLS missing SMB & IA,Metadata Only')
             XLSindex += 1
         else:
-            print(SMBlist[SMBindex],',SMB but not IA & XLS,Local Only')
+            print(SMBlist[SMBindex],',SMB missing IA & XLS,Local Only')
             SMBindex += 1
 
 print('SMB',SMBindex,SMBlen)
@@ -177,10 +181,10 @@ print('IA',IAindex,IAlen)
 print('XLS',XLSindex,XLSlen)
 
 while SMBindex < SMBlen :
-    print(SMBlist[SMBindex],',SMB & XLS but not IA,Ready to upload')
+    print(SMBlist[SMBindex],',SMB & XLS missing IA,Ready to upload')
     SMBindex += 1
             
 while XLSindex < XLSlen:
-    print(XLSlist[XLSindex],',XLS but not SMB & IA,Metadata Only')
+    print(XLSlist[XLSindex],',XLS missing SMB & IA,Metadata Only')
     XLSindex += 1
 
