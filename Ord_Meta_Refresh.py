@@ -50,7 +50,7 @@ def build_Bills_dict (Bills):
 
 def Link(Title,URL,Display):
     """ return a <a> link """
-    link='<a title="'+Title+'" target="_blank" href="'+URL+'">'+Display+'</a>'
+    link='<a title="'+Title+'" href="'+URL+'" rel="nofollow">'+Display+'</a>'
     return link
 
 BillType = {'A':'Appropriation','G':'General','R':'Resolution',
@@ -140,6 +140,7 @@ for c in CouncilOrdinance:
     if Desc == IAdesc:
         pass
     else:
+        print('Desc ',end='')
         update_meta = True
 
     try:
@@ -151,14 +152,13 @@ for c in CouncilOrdinance:
     if Notes == IAnotes:
         pass
     else:
-        # Update Notes
+        print('Notes ',end='')
         update_meta = True
 
 
     if update_meta:
         r = item.modify_metadata(dict(description=Desc,notes=Notes))
         print (r,' IA metadata updated')
-
 
     # check title page of book, fix if needed
     item.download(files=c+'_scandata.xml',destdir=tmpDir,no_directory=True,retries=10)

@@ -66,7 +66,7 @@ def build_Proceedings_dict (Proceedings, sheet):
 
 def Link(Title,URL,Display):
     """ return a <a> link """
-    link='<a title="'+Title+'" target="_blank" href="'+URL+'">'+Display+'</a>'
+    link='<a title="'+Title+'" href="'+URL+'" rel="nofollow">'+Display+'</a>'
     return link
 
 BillType = {'A':'Appropriation','G':'General','R':'Resolution',
@@ -118,7 +118,10 @@ for c in CouncilProceedings:
     p_mon  = c.split('-')[-2]
     p_day  = c.split('-')[-1]
     p_name = p_type + '-' + p_yr + '-' + p_mon + '-' + p_day
-    spd_name = p_type + '-' + p_mon + '-' + p_day + '-' + p_yr 
+    spd_name = p_type + '-' + p_mon + '-' + p_day + '-' + p_yr
+
+    if p_type == 'Index':
+        continue
 
     Identifier = 'FWCityCouncil-Proceedings-'+p_name
     Title = 'Fort Wayne Council Proceedings '+p_name
