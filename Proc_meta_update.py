@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 """
-Code to upload the council proceedings
+Update the metadata for council proceedings.
 """
 
 from openpyxl import load_workbook
@@ -111,8 +111,8 @@ Procs = build_Proceedings_dict (Procs, 'Council Proceedings')
 PATH = '/media/smb/Uploads'
 
 
-# Read the Ordinance metadata from IA
-for c in CouncilProceedings:
+# Read the Ordinance metadata from IA, starting with recent uploads
+for c in reversed(CouncilProceedings):
     p_type = c.split('-')[2]
     p_yr   = c.split('-')[-3]
     p_mon  = c.split('-')[-2]

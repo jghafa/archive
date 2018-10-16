@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 """
-Write text file for upload to AX
+Download ordinances from AX
+Write to the document server
+Create a script file to upload files to AX
 """
 
 from openpyxl import load_workbook

@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 """
-Code to upload the council proceedings
+Download the council proceedings from AX
+Save to a spot on the document server
+Create an AX import script to load the documents into AX
 """
 
 from openpyxl import load_workbook
@@ -114,8 +116,8 @@ Procs = build_Proceedings_dict (Procs, 'Council Proceedings')
 # Read the file names
 PATH = '/media/smb/Uploads'
 
-# Read the Ordinance metadata from IA
-for c in CouncilProceedings:
+# Read the Ordinance metadata from IA, new uploads first
+for c in reversed(CouncilProceedings):
     p_type = c.split('-')[2]
     p_yr   = c.split('-')[-3]
     p_mon  = c.split('-')[-2]

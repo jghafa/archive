@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 """
-Update the pickle files
+Check the metadata for each ordinance and update if needed.
+Since the metadata can cross-reference other Internet Archive
+identifiers, the metadata can change as new items are uploaded.
 """
 
 from openpyxl import load_workbook
@@ -79,8 +81,8 @@ wb = load_workbook(filename = '/media/smb/Scanned Ordinance Index.xlsx')
 Bills = {}
 Bills = build_Bills_dict (Bills)
 
-# Read the Ordinance metadata from IA
-for c in CouncilOrdinance:
+# Read the Ordinance metadata from IA, starting the last ones entered.
+for c in reversed(CouncilOrdinance):
     bill = c.split('FWCityCouncil-Ordinance-')[1]
 
     final = Bills[bill][5].strftime("%Y-%m-%d")
