@@ -15,7 +15,7 @@ import datetime
 from internetarchive import *
 
 PATH = '/media/smb/TestDVD/MayorAudio/'
-tmpDir = '/home/jghafa/archive/tmp/'
+
 
 #Name of the Internet Archive collection target for uploads
 #CollectionName = 'test_collection'
@@ -56,7 +56,16 @@ for file_name in glob.glob(PATH + '*.[wW][aA][vV]'):
     last_modified_date = datetime.datetime.fromtimestamp(mtime)
 
     newname = 'RadioSpot '+file_name.split('/')[-1]
-    Identifier = newname.replace(',','-').replace(' - ','-').replace('- ','-').replace(';','-').replace(' ','-').replace('--','-').replace("'",'').replace('.wav','')
+    Identifier = (newname.replace(',','-').
+                          replace(' - ','-').
+                          replace('- ','-').
+                          replace(';','-').
+                          replace(' ','-').
+                          replace('---','-').
+                          replace('--','-').
+                          replace('--','-').
+                          replace("'",'').
+                          replace('.wav','')  )
 
     vidDate = datetime.datetime.strftime(last_modified_date,'%Y-%m-%d')
     Title = newname.split('.')[0].strip()
