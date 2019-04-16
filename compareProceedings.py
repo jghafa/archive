@@ -16,26 +16,29 @@ def build_Proceedings_dict (Proceedings, sheet):
         if  row[1].value in Valid_Types:
 
             # Regular Meeting
-            if row[1].value == 'Council Proceeding':
-                key =('CR-' + str(row[2].value.month).zfill(2) + '-'
-                            + str(row[2].value.day).zfill(2)+ '-'
-                            + str(row[2].value.year))
-            # Organzational Meeting
-            elif row[1].value == 'Other':
-                key =('CO-' + str(row[2].value.month).zfill(2) + '-'
-                            + str(row[2].value.day).zfill(2)+ '-'
-                            + str(row[2].value.year))
-            # Special Meeting
-            elif row[1].value == 'Special':
-                key =('CS-' + str(row[2].value.month).zfill(2) + '-'
-                            + str(row[2].value.day).zfill(2)+ '-'
-                            + str(row[2].value.year))
-            # Index of Meetings
-            elif row[1].value == 'Index':
-                key =('IN-' + str(row[2].value.month).zfill(2) + '-'
-                            + str(row[2].value.day).zfill(2)+ '-'
-                            + str(row[2].value.year))
-            Proceedings[key] = (row[3].value)
+            try:
+                if row[1].value == 'Council Proceeding':
+                        key =('CR-' + str(row[2].value.month).zfill(2) + '-'
+                                    + str(row[2].value.day).zfill(2)+ '-'
+                                    + str(row[2].value.year))
+                # Organzational Meeting
+                elif row[1].value == 'Other':
+                    key =('CO-' + str(row[2].value.month).zfill(2) + '-'
+                                + str(row[2].value.day).zfill(2)+ '-'
+                                + str(row[2].value.year))
+                # Special Meeting
+                elif row[1].value == 'Special':
+                    key =('CS-' + str(row[2].value.month).zfill(2) + '-'
+                                + str(row[2].value.day).zfill(2)+ '-'
+                                + str(row[2].value.year))
+                # Index of Meetings
+                elif row[1].value == 'Index':
+                    key =('IN-' + str(row[2].value.month).zfill(2) + '-'
+                                + str(row[2].value.day).zfill(2)+ '-'
+                                + str(row[2].value.year))
+                Proceedings[key] = (row[3].value)
+            except (AttributeError) as e:
+                print("Spreadsheet,Bad Date,"+row[2].value)
     return Proceedings
 
 print('Proceedings,Status,Desc')
@@ -73,6 +76,8 @@ for fn in files:
         continue # not a bill
     if ' .TIF' in filename.upper():
         print (filename, ',space before .TIF')
+    if len(filename.split('.')) > 2:
+        print (filename, ',Period in filename')
     p_type = filename.split('-')[0].upper()
     if p_type in ['CR','CS','CO']:
         fn_list.append(fn.split('/')[-1])
@@ -134,7 +139,7 @@ while SMBindex < SMBlen and IAindex < IAlen and XLSindex < XLSlen:
         #IA and XLS match
         if  SMBlist[SMBindex] < IAlist[IAindex]:
             #SMB low
-            print(SMBlist[SMBindex],',SMB missing IA & XLS, No Metadata')
+            print(SMBlist[SMBindex],',SMB missing IA & XLS,Local Only')
             SMBindex += 1
         else:
             print(IAlist[IAindex],',IA & XLS missing SMB,')
