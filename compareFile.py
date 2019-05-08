@@ -17,7 +17,7 @@ def build_Bills_dict (Bills):
                     bill_data = (row[1].value,row[2].value,row[3].value,row[6].value,row[13].value,row[14].value,row[15].value,ws)
                     key = row[1].value.strip()
                     try:
-                        print (Bills[key][0],',duplicate key')
+                        print (Bills[key][0],',Duplicate Meta Entries')
                     except KeyError:
                         Bills[key] = bill_data
                     if Bills[key][1] is None:
@@ -32,6 +32,7 @@ def build_Bills_dict (Bills):
                         print (Bills[key][0],',Missing Final date')
     return Bills
 
+print('Ordinance,Status,Desc')
 Bills = {}
 wb = load_workbook(filename = '/media/smb/Scanned Ordinance Index.xlsx')
 Bills = build_Bills_dict (Bills)
@@ -61,11 +62,16 @@ for fn in files:
         continue  # this a windows junk file
     if not filename.split('.')[-1].upper() == 'TIF':
         continue # not a bill
+    if len(filename.split('.')) > 2:
+        print (filename, ',Period in filename')
     prefix = filename.split('-')[0]
     if prefix in ['CR','CS','CO']:
         continue # this is a council proceeding
     if ' .TIF' in filename.upper():
         print ('space before .TIF',fn)
+    if len(filename) > 10:
+        if not filename[10:11] in [' ','.']:
+            print (filename, ',Missing space after ord name')
 
     fn_list.append(fn.split('/')[-1])
     dirlist.append(fn.rstrip(fn.split('/')[-1]))
@@ -81,8 +87,6 @@ SMBindex = IAindex = XLSindex = 0
 SMBlen = len(SMBlist)
 IAlen = len(IAlist)
 XLSlen = len(XLSlist)
-
-print('Ordinance,Status,Desc')
 
 while SMBindex < SMBlen and IAindex < IAlen and XLSindex < XLSlen:
     if (SMBlist[SMBindex] == IAlist[IAindex]
