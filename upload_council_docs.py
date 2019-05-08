@@ -300,7 +300,7 @@ for f in range(len(fn_list)):
             tifnum = 0
             for c in convertList:
                 convertCmd = ('convert ' + c.replace(' ','\ ') + ' '
-                              + final + '-' + str(tifnum) + '%03d.tif')
+                              + final + '-' + str(tifnum).zfill(3) + '%03d.tif')
                 #print(convertCmd)
                 x = subprocess.run( [convertCmd],
                          cwd=tmpDir,
