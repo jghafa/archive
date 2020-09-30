@@ -46,8 +46,9 @@ vidLicense = 'http://creativecommons.org/licenses/by-nc-sa/4.0/'
 #metadata for search fields
 vidSubject = ['Fort Wayne','Local Government','Mayor','Podcast']
 
+file_names =  glob.glob(PATH + '*.[mM][pP][3]') + glob.glob(PATH + '*.[fF][lL][aA][cC]')
 
-for file_name in glob.glob(PATH + '*.[mM][pP][3]'):
+for file_name in file_names:
     try:
         mtime = os.path.getmtime(file_name)
     except OSError:
@@ -59,6 +60,7 @@ for file_name in glob.glob(PATH + '*.[mM][pP][3]'):
     Identifier = (newname.replace(',','-').
                           replace(' - ','-').
                           replace('- ','-').
+                          replace("&",'').
                           replace(';','-').
                           replace(' ','-').
                           replace('---','-').

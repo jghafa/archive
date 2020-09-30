@@ -25,9 +25,9 @@ args = parser.parse_args()
 input_name = args.coll_name
 
 #Name of the Internet Archive collection target for uploads
-TestIdSuffix = 'test'   #Set to '' when testing is done
-#CollectionName = 'citycouncilproceedings'
-CollectionName = 'test_collection'
+TestIdSuffix = ''   #Set to '' when testing is done
+#CollectionName = 'test_collection'
+CollectionName = 'citycouncilproceedings'
 
 # Title of the item in the collection.  This is the one people see.
 Title = ''

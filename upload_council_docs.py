@@ -15,7 +15,7 @@ import tempfile
 update_IA = True
 
 parser = argparse.ArgumentParser()
-parser.add_argument("coll_name", nargs='*', default=['1978']) 
+parser.add_argument("coll_name", nargs='*', default=['1983']) 
 args = parser.parse_args()
 # input_name is list of strings
 input_name = args.coll_name
@@ -198,6 +198,7 @@ for f in range(len(fn_list)):
         continue # this is a council proceeding
 
     bill = file_name.split(' ')[0]
+    print(bill, end=' ')
     Identifier = 'FWCityCouncil-Ordinance-'+bill+TestIdSuffix
     Title = 'Fort Wayne Ordinance '+bill
 
@@ -230,6 +231,7 @@ for f in range(len(fn_list)):
         if IntroID in CouncilVideo:
             IntroLink += brk
         else:
+            print (bill)
             if Bills[bill][4].year in range(1981,2007):
                 xlink.write('Missing Intro Video,'+
                   hyperlink(dirlist[f].replace('/media/smb/','\\\\vs-videostorage\\City Council Ordinances\\').replace('/','\\') + fn_list[f],bill)+ ',' +
@@ -248,6 +250,7 @@ for f in range(len(fn_list)):
         if FinalID in CouncilVideo:
             FinalLink += brk
         else:
+            print (bill)
             if Bills[bill][5].year in range(1981,2007):
                 xlink.write('Missing Final Video,'+
                   hyperlink(dirlist[f].replace('/media/smb/','\\\\vs-videostorage\\City Council Ordinances\\').replace('/','\\') + fn_list[f],bill)+ ',' +
@@ -270,7 +273,8 @@ for f in range(len(fn_list)):
         print('Identifier',Identifier,datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
         # checking the year in the file path against a list years to be processed
-        if dirlist[f].split('/')[4] in input_name or bill in input_name:
+        listyear = dirlist[f].split('/')[4]
+        if listyear in input_name or bill in input_name:
             FilePath = dirlist[f]+fn_list[f]
             print('File Path',FilePath)
             #print(brk)

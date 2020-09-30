@@ -23,3 +23,11 @@ print ('Reading councilmeeting collection')
 CouncilVideo = [item.metadata['identifier'] for item in search_items('collection:(councilmeetings)').iter_as_items()]
 print('Creating the pickle file')
 pickle.dump(CouncilVideo, open(picklefile, "wb"), protocol=pickle.HIGHEST_PROTOCOL)
+
+'''
+for item in search_items('collection:(citycouncilordinances)').iter_as_items():
+	print (item)
+	test = item.metadata['identifier']
+	print (test)
+	CouncilOrdinance.append(test)
+'''

@@ -59,6 +59,7 @@ for file_name in glob.glob(PATH + '*.[wW][aA][vV]'):
     Identifier = (newname.replace(',','-').
                           replace(' - ','-').
                           replace('- ','-').
+                          replace("&",'').
                           replace(';','-').
                           replace(' ','-').
                           replace('---','-').

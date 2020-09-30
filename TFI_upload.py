@@ -9,9 +9,12 @@ import os
 import datetime
 from internetarchive import *
 from openpyxl import load_workbook
+import tempfile
+import shutil
+
+tmpDir = tempfile.mkdtemp(dir='/home/jghafa/archive/tmp',prefix='TFI-')+'/'
 
 PATH='/home/jghafa/archive/TFI/'
-tmpDir = '/home/jghafa/archive/tmp/'
 Break = '<br>'
 
 #Name of the Internet Archive collection target for uploads
@@ -51,12 +54,19 @@ for row in ws.rows:
     #metadata for search fields
     vidSubject = ['Fort Wayne','Theater for Ideas','Public Access TV']
 
-
-    #TITLE       =row[0].value
-    FILENAME    =row[1].value
-    if not os.path.isfile(PATH+FILENAME):
-        print ('Missing ',FILENAME)
+    try:
+        FILENAME    ='Doran_'+str(int(row[0].value[0:2]))
+    except:
         continue
+
+    if os.path.isfile(PATH+FILENAME+'.mp4'):
+        FILENAME += '.mp4'
+    elif os.path.isfile(PATH+FILENAME+'.mpg'):
+        FILENAME += '.mpg'
+    else:
+        print ('Missing ',PATH+FILENAME)
+        continue
+    
     DATE        =row[2].value
     DESCRIPTION =row[3].value
     TOPIC1      =row[4].value
@@ -82,13 +92,16 @@ for row in ws.rows:
     EDITOR      =row[24].value
     CREDITS     =row[25].value
     
-    tempname = TestIdPrefix+'Theater for Ideas - '+FILENAME.split('/')[-1]
-    Identifier = tempname.replace(',','-').replace(' - ','-').replace('- ','-').replace("'",'').replace(':','').replace(' ','-').replace('.mpg','')
+    tempname = TestIdPrefix+'Theater for Ideas - '+row[1].value
+    Identifier = tempname.replace('.mpg','').replace(',','-').replace(' - ','-').replace('- ','-').replace("'",'').replace(':','').replace('\xa0',' ').replace('  ',' ').replace(' ','-').replace('.mpg','')
 
-    vidDate = DATE
     vidTitle = tempname.split('.')[0].split('   ')[0].strip()
     vidDesc = DESCRIPTION
 
+#    print(tempname)
+#    print(Identifier)
+#    print(vidTitle)
+#    x=input('name')
     if TOPIC1:
        vidSubject.append(TOPIC1) 
     if TOPIC2:
@@ -138,6 +151,11 @@ for row in ws.rows:
         vidDirector += PRODUCER2
 
     vidAudio = AUDIO
+
+    try:
+        vidDate = DATE.strftime('%Y-%m-%d')
+    except AttributeError:
+        vidDate = DATE
         
     md = dict(  collection = CollectionName, 
                 title      = vidTitle,
@@ -150,14 +168,14 @@ for row in ws.rows:
                 notes      = vidNotes,
                 sound      = vidAudio,
                 credits    = CREDITS,
-                date       = DATE.strftime('%Y-%m-%d')
+                date       = vidDate
               )  
-    print(Identifier,FILENAME   )
+    #print(FILENAME   )
+    #print(Identifier )
     #for m in md:
     #    print(m,md[m])
     #    print()
-    #print()
-
+    #x=input('ready to upload')
 
     try:
         r = upload(Identifier, files=PATH+FILENAME, metadata=md, 
@@ -165,5 +183,5 @@ for row in ws.rows:
         print ('Status code', r[0].status_code, Identifier)
     except Exception as e:
         print ('Failed on ', Identifier, e.message, e.args)
-
-    #x=input('paused')
+        
+shutil.rmtree(tmpDir)
