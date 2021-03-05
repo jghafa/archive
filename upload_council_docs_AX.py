@@ -165,6 +165,7 @@ PATH = '/media/smb/Uploads'
 # get all the files in and under PATH
 files = [file for file in glob.glob(PATH + '/**/*.*', recursive=True)]
 
+files_loaded = []
 dirlist = []
 fn_list = []
 for fn in files:
@@ -206,6 +207,10 @@ for f in range(len(fn_list)):
             #print('File Path',FilePath)
             #print(Bills[bill])
 
+            if bill in files_loaded:
+                print('Already downloaded',bill)
+                continue
+
             item = get_item(Identifier)
             item.download(glob_pattern='*.pdf',destdir=targetDir,no_directory=True,retries=10)
 
@@ -221,7 +226,7 @@ for f in range(len(fn_list)):
             #print(meta)
             AXlink.write(meta)
             AXlink.write('@@'+targetDir+bill+'.PDF'+'\n')
-
+            files_loaded.append(bill)
         
     except KeyError:
         print(dirlist[f], fn_list[f],'<<<<========== Not Found in spreadsheet')
