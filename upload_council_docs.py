@@ -198,7 +198,7 @@ for f in range(len(fn_list)):
         continue # this is a council proceeding
 
     bill = file_name.split(' ')[0]
-    print(bill, end=' ')
+    #print(bill, end=' ')
     Identifier = 'FWCityCouncil-Ordinance-'+bill+TestIdSuffix
     Title = 'Fort Wayne Ordinance '+bill
 
@@ -231,7 +231,7 @@ for f in range(len(fn_list)):
         if IntroID in CouncilVideo:
             IntroLink += brk
         else:
-            print (bill)
+            #print (bill)
             if Bills[bill][4].year in range(1981,2007):
                 xlink.write('Missing Intro Video,'+
                   hyperlink(dirlist[f].replace('/media/smb/','\\\\vs-videostorage\\City Council Ordinances\\').replace('/','\\') + fn_list[f],bill)+ ',' +
@@ -250,7 +250,7 @@ for f in range(len(fn_list)):
         if FinalID in CouncilVideo:
             FinalLink += brk
         else:
-            print (bill)
+            #print (bill)
             if Bills[bill][5].year in range(1981,2007):
                 xlink.write('Missing Final Video,'+
                   hyperlink(dirlist[f].replace('/media/smb/','\\\\vs-videostorage\\City Council Ordinances\\').replace('/','\\') + fn_list[f],bill)+ ',' +
