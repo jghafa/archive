@@ -2,7 +2,8 @@
 
 from openpyxl import load_workbook
 from internetarchive import *
-import pickle
+#import pickle
+import sqlite3
 import glob
 import argparse
 from datetime import datetime
@@ -15,7 +16,7 @@ import tempfile
 update_IA = True
 
 parser = argparse.ArgumentParser()
-parser.add_argument("coll_name", nargs='*', default=['1983']) 
+parser.add_argument("coll_name", nargs='*', default=['1987'])
 args = parser.parse_args()
 # input_name is list of strings
 input_name = args.coll_name
@@ -97,7 +98,7 @@ def build_Proceedings_dict (Proceedings, sheet):
                 key =('CR-' + str(row[2].value.day).zfill(2)+ '-'
                             + str(row[2].value.month).zfill(2) + '-'
                             + str(row[2].value.year))
-            # Organzational Meeting    
+            # Organzational Meetin
             elif row[1].value == 'Other':
                 key =('CO-' + str(row[2].value.day).zfill(2)+ '-'
                             + str(row[2].value.month).zfill(2) + '-'
@@ -132,6 +133,68 @@ brk = '<br>'
 
 Bills = {}
 
+SQLconn = sqlite3.connect('Council.sqlite')
+SQL = SQLconn.cursor()
+
+Lock=True
+Unlock=False
+def LockItem(itemtype, bill, locked):
+    ''' update the locked status of the item'''
+    insstring = 'INSERT OR REPLACE into Ordinance values (?,?)'
+    if itemtype[0] == 'P':
+        insstring = 'INSERT OR REPLACE into Proceeding values (?,?)'
+    if itemtype[0] == 'V':
+        insstring = 'INSERT OR REPLACE into Video values (?,?)'
+    SQL.execute(insstring,(bill,locked) )
+    SQLconn.commit()
+
+def RemoveItem(itemtype, bill):
+    ''' Remove from SQL if upload failed '''
+    selstring = 'DELETE FROM Ordinance WHERE item = (?);'
+    if itemtype[0] == 'P':
+        selstring = 'DELETE FROM FROM Proceeding WHERE item = (?);'
+    if itemtype[0] == 'V':
+        selstring = 'DELETE FROM FROM Video WHERE item = (?);'
+    SQL.execute(selstring,(bill,) )
+    SQLconn.commit()
+
+def ItemExist(itemtype, bill):
+    ''' Return True if the item exists, False if not '''
+    selstring = 'SELECT * FROM Ordinance WHERE item = (?);'
+    if itemtype[0] == 'P':
+        selstring = 'SELECT * FROM Proceeding WHERE item = (?);'
+    if itemtype[0] == 'V':
+        selstring = 'SELECT * FROM Video WHERE item = (?);'
+    for row in SQL.execute(selstring, (bill,) ):
+        return True
+    return False
+
+
+"""
+Ord not in IA - Upload it
+Ord in IA and Unlocked - It's done so skip it
+Ord in IA and Locked - It's in process so skip it
+
+while looping through files
+    if Ord does not exists in IA - use ItemExist to test
+        process it and lock it to prevent other uploads -use LockItem to lock
+        Try IA Upload
+        if Upload worked
+            Unlock it - LockItem to unlock
+        else
+            Remove it - RemoveItem
+"""
+
+# >>> x='FWCityCouncil-Ordinance-S-85-09-09'
+# >>> LockIt = True
+# >>> insertSQL('O',x, LockIt)
+# >>> UploadItem('O',x)
+# False
+# >>> insertSQL('O',x, not(LockIt))
+# >>> UploadItem('O',x)
+# True
+
+"""
 picklefile = 'CouncilVideo.pickle'
 try:
     CouncilVideo = pickle.load(open(picklefile, "rb"))
@@ -148,7 +211,7 @@ except (OSError, IOError) as e:
     CouncilOrdinance = [item.metadata['identifier'] for item in search_items('collection:(citycouncilordinances)').iter_as_items()]
     pickle.dump(CouncilOrdinance, open(picklefile, "wb"), protocol=pickle.HIGHEST_PROTOCOL)
 
-
+"""
 # open log file
 log = open('../Documents/log.txt', 'a')
 xlink = open('../Documents/Crosslink.txt', 'a')
@@ -156,7 +219,6 @@ log.write(datetime.now().strftime('%Y-%m-%d %H:%M:%S, ') + 'Start UpLoad \n')
 xlink.write(datetime.now().strftime('%Y-%m-%d %H:%M:%S, ') + 'Start UpLoad \n')
 
 xlink.write('Error,Bill,Intro,Intro Day,Final,Final Day,Notes' '\n')
-
 
 #wb = load_workbook(filename =
 #    '//vs-videostorage/City Council Ordinances/Council Proceedings Index.xlsx')
@@ -182,7 +244,7 @@ fn_list = []
 for fn in files:
     fn_list.append(fn.split('/')[-1])
     dirlist.append(fn.rstrip(fn.split('/')[-1]))
-    
+
 print ()
 # loop thru file names
 for f in range(len(fn_list)):
@@ -199,6 +261,7 @@ for f in range(len(fn_list)):
 
     bill = file_name.split(' ')[0]
     #print(bill, end=' ')
+
     Identifier = 'FWCityCouncil-Ordinance-'+bill+TestIdSuffix
     Title = 'Fort Wayne Ordinance '+bill
 
@@ -222,13 +285,14 @@ for f in range(len(fn_list)):
                 Bills[bill][3] + brk +
                 'Introduced: ' + intro + brk +
                 'Final Disposition: ' + final)
-        
-        IntroID = 'FWCityCouncil-'+intro
+
+        #IntroID = 'FWCityCouncil-'+intro
         IntroLink =(Link(intro + ' Council Video',
             'https://archive.org/details/FWCityCouncil-'+intro,
             'Video of Council Introduction '+intro))
-        
-        if IntroID in CouncilVideo:
+
+        #if IntroID in CouncilVideo:
+        if ItemExist('V','FWCityCouncil-'+intro):
             IntroLink += brk
         else:
             #print (bill)
@@ -236,18 +300,19 @@ for f in range(len(fn_list)):
                 xlink.write('Missing Intro Video,'+
                   hyperlink(dirlist[f].replace('/media/smb/','\\\\vs-videostorage\\City Council Ordinances\\').replace('/','\\') + fn_list[f],bill)+ ',' +
                   hyperlink('https://archive.org/details/FWCityCouncil-'+intro, intro) + ',' +
-                  '"=datevalue(indirect(address(row(),column()-1,4)))"' + ',' +                
+                  '"=datevalue(indirect(address(row(),column()-1,4)))"' + ',' +
                   hyperlink('https://archive.org/details/FWCityCouncil-'+final, final) + ',' +
-                  '"=datevalue(indirect(address(row(),column()-1,4)))"' + ',' +                
+                  '"=datevalue(indirect(address(row(),column()-1,4)))"' + ',' +
                   '\n')
             IntroLink = ''
-                        
-        FinalID = 'FWCityCouncil-'+final
+
+        #FinalID = 'FWCityCouncil-'+final
         FinalLink =(Link(final + ' Council Video',
                 'https://archive.org/details/FWCityCouncil-'+final,
                 'Video of Final Disposition '+final) + brk)
 
-        if FinalID in CouncilVideo:
+        #if FinalID in CouncilVideo:
+        if ItemExist('V','FWCityCouncil-'+final):
             FinalLink += brk
         else:
             #print (bill)
@@ -255,9 +320,9 @@ for f in range(len(fn_list)):
                 xlink.write('Missing Final Video,'+
                   hyperlink(dirlist[f].replace('/media/smb/','\\\\vs-videostorage\\City Council Ordinances\\').replace('/','\\') + fn_list[f],bill)+ ',' +
                   hyperlink('https://archive.org/details/FWCityCouncil-'+intro, intro) + ',' +
-                  '"=datevalue(indirect(address(row(),column()-1,4)))"' + ',' +                
+                  '"=datevalue(indirect(address(row(),column()-1,4)))"' + ',' + 
                   hyperlink('https://archive.org/details/FWCityCouncil-'+final, final) + ',' +
-                  '"=datevalue(indirect(address(row(),column()-1,4)))"' + ',' +                
+                  '"=datevalue(indirect(address(row(),column()-1,4)))"' + ',' +
                   '\n')
             FinalLink = ''
 
@@ -266,10 +331,12 @@ for f in range(len(fn_list)):
 
         Subject='Fort Wayne;'+bill+';'+Bills[bill][1]
 
-        if Identifier in CouncilOrdinance and not bill in input_name:
+#        if Identifier in CouncilOrdinance and not bill in input_name:
+        if ItemExist('Ord', Identifier) and not bill in input_name:
             print('Skipping',Identifier,datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
             continue
 
+        LockItem('Ord', Identifier, Lock)
         print('Identifier',Identifier,datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
         # checking the year in the file path against a list years to be processed
@@ -287,7 +354,7 @@ for f in range(len(fn_list)):
             #print(Notes)
             #print(brk)
             #print(Subject)
-                            
+
             md = dict(  collection = CollectionName, 
                         title      = Title,
                         mediatype  = MediaType, 
@@ -300,7 +367,7 @@ for f in range(len(fn_list)):
             #print(md)
 
             convertList = glob.glob(dirlist[f] + bill + '*.[tT][iI][fF]')
-            
+
             tifnum = 0
             for c in convertList:
                 convertCmd = ('convert ' + c.replace(' ','\ ') + ' '
@@ -309,7 +376,7 @@ for f in range(len(fn_list)):
                 x = subprocess.run( [convertCmd],
                          cwd=tmpDir,
                          stdout=subprocess.DEVNULL,
-                         shell=True)            
+                         shell=True)
                 tifnum += 1
 
             # Add the blueprints, if needed
@@ -341,18 +408,20 @@ for f in range(len(fn_list)):
                     print ('Status', r[0].status_code, zipFile)
                     log.write(datetime.now().strftime('%Y-%m-%d %H:%M:%S, ') + 
                               FilePath +' uploaded' + '\n')
-                    CouncilOrdinance.append(Identifier) # Note to avoid further uploads
-                    pickle.dump(CouncilOrdinance, open(picklefile, "wb"),
-                                protocol=pickle.HIGHEST_PROTOCOL)
+                    LockItem('Ord', Identifier, Unlock)
+                    #CouncilOrdinance.append(Identifier) # Note to avoid further uploads
+                    #pickle.dump(CouncilOrdinance, open(picklefile, "wb"),
+                    #            protocol=pickle.HIGHEST_PROTOCOL)
 
                 except Exception as e:
                     print('Upload Failed on ', zipFile, e.message, e.args)
                     log.write(datetime.now().strftime('%Y-%m-%d %H:%M:%S, ') + 
                               FilePath +' failed' +  e.message + '\n')
+                    RemoveItem('Ord', Identifier)
                     continue
             else:
                 z=input('update_IA is False')
-                
+
             # Delete temp files')
 
             for tmpfile in glob.glob(tmpDir + '*.[tT][iI][fF]'):
@@ -360,7 +429,6 @@ for f in range(len(fn_list)):
             for tmpfile in glob.glob(tmpDir + '*.[zZ][iI][pP]'):
                 os.remove(tmpfile)
 
-        
     except KeyError:
         print(dirlist[f], fn_list[f],'<<<<========== Not Found in spreadsheet')
 

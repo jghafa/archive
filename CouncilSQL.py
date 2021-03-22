@@ -13,11 +13,11 @@ SQLconn = sqlite3.connect('Council.sqlite')
 SQL = SQLconn.cursor()
 
 SQL.execute("""drop table if exists Video;""")
-SQL.execute("""create table Video (item text PRIMARY KEY );""")
+SQL.execute("""create table Video (item text PRIMARY KEY, locked BOOL );""")
 SQL.execute("""drop table if exists Ordinance;""")
-SQL.execute("""create table Ordinance (item text PRIMARY KEY );""")
+SQL.execute("""create table Ordinance (item text PRIMARY KEY, locked BOOL );""")
 SQL.execute("""drop table if exists Proceeding;""")
-SQL.execute("""create table Proceeding (item text PRIMARY KEY );""")
+SQL.execute("""create table Proceeding (item text PRIMARY KEY, locked BOOL );""")
 
 print('Reading Videos')
 picklefile = 'CouncilVideo.pickle'
@@ -50,12 +50,12 @@ except (OSError, IOError) as e:
 
 #Insert the items in the database
 print('Loading SQL')
-tups = [(element,) for element in CouncilVideo]
-SQL.executemany('INSERT OR IGNORE into Video values (?)', tups )
-tups = [(element,) for element in CouncilOrdinance]
-SQL.executemany('INSERT OR IGNORE into Ordinance values (?)', tups )
-tups = [(element,) for element in CouncilProceedings]
-SQL.executemany('INSERT OR IGNORE into Proceeding values (?)', tups )
+tups = [(element,0) for element in CouncilVideo]
+SQL.executemany('INSERT OR IGNORE into Video values (?,?)', tups )
+tups = [(element,0) for element in CouncilOrdinance]
+SQL.executemany('INSERT OR IGNORE into Ordinance values (?,?)', tups )
+tups = [(element,0) for element in CouncilProceedings]
+SQL.executemany('INSERT OR IGNORE into Proceeding values (?,?)', tups )
 
 #Save the database
 SQLconn.commit()
