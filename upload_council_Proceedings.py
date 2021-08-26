@@ -5,7 +5,8 @@ Code to upload the council proceedings
 
 from openpyxl import load_workbook
 from internetarchive import *
-import pickle
+#import pickle
+import sqlite3
 import glob
 import argparse
 from datetime import datetime
@@ -131,10 +132,49 @@ def hyperlink(url,friendly):
 BillType = {'A':'Appropriation','G':'General','R':'Resolution',
            'S':'Special','X':'Annexation','Z':'Zoning'}
 ProcType = {'CR':'Regular','CO':'Organizational','CS':'Special'}
-brk = '<br>'
+brk = '<br />'
 
 Procs = {}
 
+SQLconn = sqlite3.connect('Council.sqlite')
+SQL = SQLconn.cursor()
+
+Lock=True
+Unlock=False
+def LockItem(itemtype, bill, locked):
+    ''' update the locked status of the item'''
+    insstring = 'INSERT OR REPLACE into Ordinance values (?,?)'
+    if itemtype[0] == 'P':
+        insstring = 'INSERT OR REPLACE into Proceeding values (?,?)'
+    if itemtype[0] == 'V':
+        insstring = 'INSERT OR REPLACE into Video values (?,?)'
+    SQL.execute(insstring,(bill,locked) )
+    SQLconn.commit()
+
+def RemoveItem(itemtype, bill):
+    ''' Remove from SQL if upload failed '''
+    selstring = 'DELETE FROM Ordinance WHERE item = (?);'
+    if itemtype[0] == 'P':
+        selstring = 'DELETE FROM Proceeding WHERE item = (?);'
+    if itemtype[0] == 'V':
+        selstring = 'DELETE FROM Video WHERE item = (?);'
+    SQL.execute(selstring,(bill,) )
+    SQLconn.commit()
+
+def ItemExist(itemtype, bill):
+    ''' Return True if the item exists, False if not '''
+    selstring = 'SELECT * FROM Ordinance WHERE item = (?);'
+    if itemtype[0] == 'P':
+        selstring = 'SELECT * FROM Proceeding WHERE item = (?);'
+    if itemtype[0] == 'V':
+        selstring = 'SELECT * FROM Video WHERE item = (?);'
+    for row in SQL.execute(selstring, (bill,) ):
+        return True
+    return False
+
+
+
+"""
 picklefile = 'CouncilVideo.pickle'
 try:
     CouncilVideo = pickle.load(open(picklefile, "rb"))
@@ -158,7 +198,7 @@ except (OSError, IOError) as e:
     print ('Reading citycouncilproceeding collection')
     CouncilProceedings = [item.metadata['identifier'] for item in search_items('collection:(citycouncilproceedings)').iter_as_items()]
     pickle.dump(CouncilProceedings, open(picklefile, "wb"), protocol=pickle.HIGHEST_PROTOCOL)
-
+"""
 
 # open log file
 log = open('../Documents/log.txt', 'a')
@@ -217,13 +257,6 @@ for f in range(len(fn_list)):
     Title = 'Fort Wayne Council Proceedings '+p_name
     #print (Procs[file_name])
 
-#    if ' ' in Identifier:
-#        print (Identifier)
-
-#    if 'CR-12-11-1979' in file_name:
-#        print(file_name)
-#        print(proc_name)
-#        print (Identifier)
     try:
         if Procs[proc_name] is None:
             SPDnotes = ''
@@ -236,7 +269,8 @@ for f in range(len(fn_list)):
             'https://archive.org/details/FWCityCouncil-'+MeetDate,
             'Video of Council Introduction '+MeetDate))
         
-        if MeetID in CouncilVideo:
+        #if MeetID in CouncilVideo:
+        if ItemExist('V','FWCityCouncil-'+MeetID):
             MeetLink += brk
         else:
             MeetLink = ''
@@ -247,10 +281,12 @@ for f in range(len(fn_list)):
 
         Subject='Fort Wayne;'+ProcType[p_type]+' Council Proceedings'+';'+MeetDate
 
-        if Identifier in CouncilProceedings and not p_name in input_name:
+        #if Identifier in CouncilProceedings and not p_name in input_name:
+        if ItemExist('Proc', Identifier) and not p_name in input_name:
             print('Skipping',Identifier,datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
             continue
 
+        LockItem('Proc', Identifier, Lock)
         print('Identifier',Identifier,datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
         # checking the year in the file path against a list years to be processed
         if dirlist[f].split('/')[4][:4] in input_name or p_name in input_name:
@@ -313,15 +349,17 @@ for f in range(len(fn_list)):
                     print (r[0].status_code, zipFile)
                     log.write(datetime.now().strftime('%Y-%m-%d %H:%M:%S, ') + 
                               FilePath +' uploaded' + '\n')
-                    picklefile = 'CouncilProceedings.pickle'
-                    CouncilProceedings.append(Identifier) # Note to avoid further uploads
-                    pickle.dump(CouncilProceedings, open(picklefile, "wb"),
-                                protocol=pickle.HIGHEST_PROTOCOL)
+                    LockItem('Proc', Identifier, Unlock)
+                    #picklefile = 'CouncilProceedings.pickle'
+                    #CouncilProceedings.append(Identifier) # Note to avoid further uploads
+                    #pickle.dump(CouncilProceedings, open(picklefile, "wb"),
+                    #            protocol=pickle.HIGHEST_PROTOCOL)
 
                 except Exception as e:
                     print('Upload Failed on ', zipFile, e.message, e.args)
                     log.write(datetime.now().strftime('%Y-%m-%d %H:%M:%S, ') + 
                               FilePath +' failed' +  e.message + '\n')
+                    RemoveItem('Proc', Identifier)
                     continue
             else:
                 z=input('update_IA is False')

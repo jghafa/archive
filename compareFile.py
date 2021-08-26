@@ -4,7 +4,8 @@
 
 from openpyxl import load_workbook
 from internetarchive import *
-import pickle
+# import pickle
+import sqlite3
 import glob
 
 def build_Bills_dict (Bills):
@@ -38,6 +39,7 @@ wb = load_workbook(filename = '/media/smb/Scanned Ordinance Index.xlsx')
 Bills = build_Bills_dict (Bills)
 XLSlist = list(Bills.keys())
 
+'''
 picklefile = 'CouncilOrdinance.pickle'
 try:
     CouncilOrdinance = pickle.load(open(picklefile, "rb"))
@@ -45,7 +47,10 @@ except (OSError, IOError) as e:
     print ('Reading citycouncilordinance collection')
     CouncilOrdinance = [item.metadata['identifier'] for item in search_items('collection:(citycouncilordinances)').iter_as_items()]
     pickle.dump(CouncilOrdinance, open(picklefile, "wb"), protocol=pickle.HIGHEST_PROTOCOL)
+'''
 
+SQLconn = sqlite3.connect('Council.sqlite')
+SQL = SQLconn.cursor()
 
 # Read the file names
 PATH = '/media/smb/Uploads'
@@ -77,7 +82,12 @@ for fn in files:
     dirlist.append(fn.rstrip(fn.split('/')[-1]))
     SMBlist.append(fn.split('/')[-1].split('.')[0])
 
-IAlist=[x.lstrip('FWCityCouncil-Ordinance-') for x in CouncilOrdinance]
+IAlist = []
+selstring = 'SELECT * FROM Ordinance;'
+for row in SQL.execute(selstring):
+	IAlist.append(row[0].lstrip('FWCityCouncil-Ordinance-'))
+
+#IAlist=[x.lstrip('FWCityCouncil-Ordinance-') for x in CouncilOrdinance]
 
 SMBlist.sort()
 IAlist.sort()

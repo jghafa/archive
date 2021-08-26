@@ -11,6 +11,7 @@ from time import strftime
 import subprocess
 import os
 import tempfile
+import shutil
 
 # True for uploading files, false for debugging
 update_IA = True
@@ -129,7 +130,7 @@ def hyperlink(url,friendly):
 
 BillType = {'A':'Appropriation','G':'General','R':'Resolution',
            'S':'Special','X':'Annexation','Z':'Zoning'}
-brk = '<br>'
+brk = '<br />'
 
 Bills = {}
 
@@ -434,3 +435,4 @@ for f in range(len(fn_list)):
 
 log.close()
 xlink.close()
+shutil.rmtree(tmpDir)

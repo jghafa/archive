@@ -9,7 +9,8 @@ from openpyxl import load_workbook
 from internetarchive import *
 import os
 import glob
-import pickle
+#import pickle
+import sqlite3
 import tempfile
 import shutil
 
@@ -59,6 +60,36 @@ BillType = {'A':'Appropriation','G':'General','R':'Resolution',
            'S':'Special','X':'Annexation','Z':'Zoning'}
 brk = '<br />'
 
+SQLconn = sqlite3.connect('Council.sqlite')
+SQL = SQLconn.cursor()
+
+Existconn = sqlite3.connect('Council.sqlite')
+ExistSQL = SQLconn.cursor()
+
+Lock=True
+Unlock=False
+def LockItem(itemtype, bill, locked):
+    ''' update the locked status of the item'''
+    insstring = 'INSERT OR REPLACE into Ordinance values (?,?)'
+    if itemtype[0] == 'P':
+        insstring = 'INSERT OR REPLACE into Proceeding values (?,?)'
+    if itemtype[0] == 'V':
+        insstring = 'INSERT OR REPLACE into Video values (?,?)'
+    ExistSQL.execute(insstring,(bill,locked) )
+    Existconn.commit()
+
+def ItemExist(itemtype, bill):
+    ''' Return True if the item exists, False if not '''
+    selstring = 'SELECT * FROM Ordinance WHERE item = (?);'
+    if itemtype[0] == 'P':
+        selstring = 'SELECT * FROM Proceeding WHERE item = (?);'
+    if itemtype[0] == 'V':
+        selstring = 'SELECT * FROM Video WHERE item = (?);'
+    for row in ExistSQL.execute(selstring, (bill,) ):
+        return True
+    return False
+
+'''
 picklefile = 'CouncilVideo.pickle'
 try:
     CouncilVideo = pickle.load(open(picklefile, "rb"))
@@ -74,6 +105,7 @@ except (OSError, IOError) as e:
     print ('Reading citycouncilordinance collection')
     CouncilOrdinance = [item.metadata['identifier'] for item in search_items('collection:(citycouncilordinances)').iter_as_items()]
     pickle.dump(CouncilOrdinance, open(picklefile, "wb"), protocol=pickle.HIGHEST_PROTOCOL)
+'''
 
 #wb = load_workbook(filename =
 #    '//vs-videostorage/City Council Ordinances/Scanned Ordinance Index.xlsx')
@@ -82,7 +114,11 @@ Bills = {}
 Bills = build_Bills_dict (Bills)
 
 # Read the Ordinance metadata from IA, starting the last ones entered.
-for c in reversed(CouncilOrdinance):
+SQLstring = 'SELECT * FROM Ordinance WHERE locked = 0 ORDER BY item DESC'
+
+#for c in reversed(CouncilOrdinance):
+for row in SQL.execute(SQLstring):
+    c = row[0]
     bill = c.split('FWCityCouncil-Ordinance-')[1]
 
     final = Bills[bill][5].strftime("%Y-%m-%d")
@@ -106,18 +142,20 @@ for c in reversed(CouncilOrdinance):
     IntroLink =(Link(intro + ' Council Video',
         'https://archive.org/details/FWCityCouncil-'+intro,
         'Video of Council Introduction '+intro))
-    
-    if IntroID in CouncilVideo:
+
+    #if IntroID in CouncilVideo:
+    if ItemExist('Video', IntroID):
         IntroLink += brk
     else:
         IntroLink = ''
-                    
+
     FinalID = 'FWCityCouncil-'+final
     FinalLink =(Link(final + ' Council Video',
             'https://archive.org/details/FWCityCouncil-'+final,
             'Video of Final Disposition '+final) + brk)
 
-    if FinalID in CouncilVideo:
+#    if FinalID in CouncilVideo:
+    if ItemExist('Video', FinalID):
         FinalLink += brk
     else:
         FinalLink = ''
@@ -176,13 +214,13 @@ for c in reversed(CouncilOrdinance):
             if FirstPage:
                 FirstPage=False
                 rep_line = line.replace('Normal','Title')
-            else:            
+            else:
                 rep_line = line.replace('Title','Normal')
         if not line == rep_line:
             modified = True
             line = rep_line
         xmlOut.write(line)
-        
+
     xml_In.close()
     xmlOut.close()
 

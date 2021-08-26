@@ -7,15 +7,14 @@ Create a script file to upload files to AX
 
 from openpyxl import load_workbook
 from internetarchive import *
-import pickle
+#import pickle
+#import sqlite3
 import glob
 import argparse
 from datetime import datetime
 from time import strftime
 import subprocess
-#from pathlib import Path
 import os
-
 
 parser = argparse.ArgumentParser()
 parser.add_argument("coll_name", nargs='*', default=['1970']) 
@@ -125,6 +124,14 @@ brk = '<br>'
 
 Bills = {}
 
+"""
+SQLconn = sqlite3.connect('Council.sqlite')
+SQL = SQLconn.cursor()
+
+Existconn = sqlite3.connect('Council.sqlite')
+ExistSQL = SQLconn.cursor()
+"""
+"""
 picklefile = 'CouncilVideo.pickle'
 try:
     CouncilVideo = pickle.load(open(picklefile, "rb"))
@@ -140,6 +147,7 @@ except (OSError, IOError) as e:
     print ('Reading citycouncilordinance collection')
     CouncilOrdinance = [item.metadata['identifier'] for item in search_items('collection:(citycouncilordinances)').iter_as_items()]
     pickle.dump(CouncilOrdinance, open(picklefile, "wb"), protocol=pickle.HIGHEST_PROTOCOL)
+"""
 
 # open log file
 targetDir='/media/smb/PDFs/'+ input_name[0] + '/'

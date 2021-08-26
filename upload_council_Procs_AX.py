@@ -9,7 +9,8 @@ from openpyxl import load_workbook
 from internetarchive import *
 import os
 import glob
-import pickle
+#import pickle
+import sqlite3
 from datetime import datetime
 from time import strftime
 import subprocess
@@ -85,6 +86,24 @@ brk = '<br>'
 
 Procs = {}
 
+SQLconn = sqlite3.connect('Council.sqlite')
+SQL = SQLconn.cursor()
+
+Existconn = sqlite3.connect('Council.sqlite')
+ExistSQL = SQLconn.cursor()
+
+def ItemExist(itemtype, bill):
+    ''' Return True if the item exists, False if not '''
+    selstring = 'SELECT * FROM Ordinance WHERE item = (?);'
+    if itemtype[0] == 'P':
+        selstring = 'SELECT * FROM Proceeding WHERE item = (?);'
+    if itemtype[0] == 'V':
+        selstring = 'SELECT * FROM Video WHERE item = (?);'
+    for row in ExistSQL.execute(selstring, (bill,) ):
+        return True
+    return False
+
+"""
 picklefile = 'CouncilVideo.pickle'
 try:
     CouncilVideo = pickle.load(open(picklefile, "rb"))
@@ -100,6 +119,7 @@ except (OSError, IOError) as e:
     print ('Reading citycouncilproceeding collection')
     CouncilProceedings = [item.metadata['identifier'] for item in search_items('collection:(citycouncilproceedings)').iter_as_items()]
     pickle.dump(CouncilProceedings, open(picklefile, "wb"), protocol=pickle.HIGHEST_PROTOCOL)
+"""
 
 # open log file
 targetDir='/media/smb/PDFs/Proc'+ input_name[0] + '/'
@@ -116,8 +136,13 @@ Procs = build_Proceedings_dict (Procs, 'Council Proceedings')
 # Read the file names
 PATH = '/media/smb/Uploads'
 
+# Read the Ordinance metadata from IA, starting with recent uploads
+SQLstring = 'SELECT * FROM Proceeding WHERE locked = 0 ORDER BY item DESC'
+
 # Read the Ordinance metadata from IA, new uploads first
-for c in reversed(CouncilProceedings):
+#for c in reversed(CouncilProceedings):
+for row in SQL.execute(SQLstring):
+    c = row[0]
     p_type = c.split('-')[2]
     p_yr   = c.split('-')[-3]
     p_mon  = c.split('-')[-2]

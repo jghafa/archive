@@ -7,7 +7,8 @@ from openpyxl import load_workbook
 from internetarchive import *
 import os
 import glob
-import pickle
+#import pickle
+import sqlite3
 import tempfile
 import shutil
 
@@ -72,10 +73,40 @@ def Link(Title,URL,Display):
 BillType = {'A':'Appropriation','G':'General','R':'Resolution',
            'S':'Special','X':'Annexation','Z':'Zoning'}
 ProcType = {'CR':'Regular','CO':'Organizational','CS':'Special'}
-brk = '<br>'
+brk = '<br />'
 
 Procs = {}
 
+SQLconn = sqlite3.connect('Council.sqlite')
+SQL = SQLconn.cursor()
+
+Existconn = sqlite3.connect('Council.sqlite')
+ExistSQL = SQLconn.cursor()
+
+Lock=True
+Unlock=False
+def LockItem(itemtype, bill, locked):
+    ''' update the locked status of the item'''
+    insstring = 'INSERT OR REPLACE into Ordinance values (?,?)'
+    if itemtype[0] == 'P':
+        insstring = 'INSERT OR REPLACE into Proceeding values (?,?)'
+    if itemtype[0] == 'V':
+        insstring = 'INSERT OR REPLACE into Video values (?,?)'
+    ExistSQL.execute(insstring,(bill,locked) )
+    Existconn.commit()
+
+def ItemExist(itemtype, bill):
+    ''' Return True if the item exists, False if not '''
+    selstring = 'SELECT * FROM Ordinance WHERE item = (?);'
+    if itemtype[0] == 'P':
+        selstring = 'SELECT * FROM Proceeding WHERE item = (?);'
+    if itemtype[0] == 'V':
+        selstring = 'SELECT * FROM Video WHERE item = (?);'
+    for row in ExistSQL.execute(selstring, (bill,) ):
+        return True
+    return False
+
+'''
 picklefile = 'CouncilVideo.pickle'
 try:
     CouncilVideo = pickle.load(open(picklefile, "rb"))
@@ -99,7 +130,7 @@ except (OSError, IOError) as e:
     print ('Reading citycouncilproceeding collection')
     CouncilProceedings = [item.metadata['identifier'] for item in search_items('collection:(citycouncilproceedings)').iter_as_items()]
     pickle.dump(CouncilProceedings, open(picklefile, "wb"), protocol=pickle.HIGHEST_PROTOCOL)
-
+'''
 
 
 #wb = load_workbook(filename =
@@ -112,7 +143,11 @@ PATH = '/media/smb/Uploads'
 
 
 # Read the Ordinance metadata from IA, starting with recent uploads
-for c in reversed(CouncilProceedings):
+SQLstring = 'SELECT * FROM Proceeding WHERE locked = 0 ORDER BY item DESC'
+
+#for c in reversed(CouncilProceedings):
+for row in SQL.execute(SQLstring):
+    c = row[0]
     p_type = c.split('-')[2]
     p_yr   = c.split('-')[-3]
     p_mon  = c.split('-')[-2]
@@ -136,8 +171,9 @@ for c in reversed(CouncilProceedings):
 
     MeetDate = p_yr + '-' + p_mon + '-' + p_day
     MeetID = 'FWCityCouncil-'+ MeetDate
-    
-    if MeetID in CouncilVideo:
+
+    #if MeetID in CouncilVideo:
+    if ItemExist('Video', MeetID):
         MeetLink =(Link(MeetDate + ' Council Video',
             'https://archive.org/details/FWCityCouncil-'+MeetDate,
             'Video of Council Meeting '+MeetDate))
@@ -182,7 +218,12 @@ for c in reversed(CouncilProceedings):
         print (r,' IA metadata updated')
 
     # check title page of book, fix if needed
-    item.download(files=c+'_scandata.xml',destdir=tmpDir,no_directory=True,retries=10)
+    try:
+        item.download(files=c+'_scandata.xml',destdir=tmpDir,no_directory=True,retries=25)
+    except ReadTimeout:
+        print('ReadTimeout')
+        item.download(files=c+'_scandata.xml',destdir=tmpDir,no_directory=True,retries=25)
+
 
     xml_In = open(tmpDir +          c +'_scandata.xml', 'r')
     xmlOut = open(tmpDir + 'new_' + c +'_scandata.xml', 'w')
@@ -195,13 +236,13 @@ for c in reversed(CouncilProceedings):
             if FirstPage:
                 FirstPage=False
                 rep_line = line.replace('Normal','Title')
-            else:            
+            else:
                 rep_line = line.replace('Title','Normal')
         if not line == rep_line:
             modified = True
             line = rep_line
         xmlOut.write(line)
-        
+
     xml_In.close()
     xmlOut.close()
 
@@ -211,7 +252,7 @@ for c in reversed(CouncilProceedings):
         os.rename(tmpDir + 'new_' + c +'_scandata.xml',
                   tmpDir +          c +'_scandata.xml')
         if update_IA:
-            r = item.upload(files=tmpDir+c+'_scandata.xml',retries=10)
+            r = item.upload(files=tmpDir+c+'_scandata.xml',retries=25)
             print (r,' XML updated')
 
     for tmpfile in glob.glob(tmpDir + '*.[xX][mM][lL]'):
