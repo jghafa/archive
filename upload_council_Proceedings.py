@@ -6,7 +6,8 @@ Code to upload the council proceedings
 from openpyxl import load_workbook
 from internetarchive import *
 #import pickle
-import sqlite3
+#import sqlite3
+import IA_SQL
 import glob
 import argparse
 from datetime import datetime
@@ -136,6 +137,7 @@ brk = '<br />'
 
 Procs = {}
 
+"""
 SQLconn = sqlite3.connect('Council.sqlite')
 SQL = SQLconn.cursor()
 
@@ -171,7 +173,7 @@ def ItemExist(itemtype, bill):
     for row in SQL.execute(selstring, (bill,) ):
         return True
     return False
-
+"""
 
 
 """
@@ -270,7 +272,7 @@ for f in range(len(fn_list)):
             'Video of Council Introduction '+MeetDate))
         
         #if MeetID in CouncilVideo:
-        if ItemExist('V','FWCityCouncil-'+MeetID):
+        if IA_SQL.ItemExist('V','FWCityCouncil-'+MeetID):
             MeetLink += brk
         else:
             MeetLink = ''
@@ -282,15 +284,16 @@ for f in range(len(fn_list)):
         Subject='Fort Wayne;'+ProcType[p_type]+' Council Proceedings'+';'+MeetDate
 
         #if Identifier in CouncilProceedings and not p_name in input_name:
-        if ItemExist('Proc', Identifier) and not p_name in input_name:
-            print('Skipping',Identifier,datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+        if IA_SQL.ItemExist('Proc', Identifier) and not p_name in input_name:
+            #print('Skipping',Identifier,datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
             continue
 
-        LockItem('Proc', Identifier, Lock)
+        IA_SQL.LockItem('Proc', Identifier, IA_SQL.Lock)
         print('Identifier',Identifier,datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
         # checking the year in the file path against a list years to be processed
         if dirlist[f].split('/')[4][:4] in input_name or p_name in input_name:
             FilePath = dirlist[f]+fn_list[f]
+            print(dirlist[f].split('/')[4][:4],input_name ,p_name )
             print('File Path',FilePath)
                             
             md = dict(  collection = CollectionName, 
@@ -349,7 +352,7 @@ for f in range(len(fn_list)):
                     print (r[0].status_code, zipFile)
                     log.write(datetime.now().strftime('%Y-%m-%d %H:%M:%S, ') + 
                               FilePath +' uploaded' + '\n')
-                    LockItem('Proc', Identifier, Unlock)
+                    IA_SQL.LockItem('Proc', Identifier, IA_SQL.Unlock)
                     #picklefile = 'CouncilProceedings.pickle'
                     #CouncilProceedings.append(Identifier) # Note to avoid further uploads
                     #pickle.dump(CouncilProceedings, open(picklefile, "wb"),
@@ -359,7 +362,7 @@ for f in range(len(fn_list)):
                     print('Upload Failed on ', zipFile, e.message, e.args)
                     log.write(datetime.now().strftime('%Y-%m-%d %H:%M:%S, ') + 
                               FilePath +' failed' +  e.message + '\n')
-                    RemoveItem('Proc', Identifier)
+                    IA_SQL.RemoveItem('Proc', Identifier)
                     continue
             else:
                 z=input('update_IA is False')

@@ -4,8 +4,9 @@
 
 from openpyxl import load_workbook
 from internetarchive import *
-import pickle
+#import pickle
 import glob
+import IA_SQL
 
 def build_Proceedings_dict (Proceedings, sheet):
     """ Read Excel Ordinance data sheet and append it to a dictionary"""
@@ -49,6 +50,7 @@ wb = load_workbook(filename = '/media/smb/Council Proceedings Index.xlsx')
 Procs = build_Proceedings_dict (Procs, 'Council Proceedings')
 XLSlist = list(Procs.keys())
 
+"""
 # Read in Internet Archive Proceedings
 picklefile = 'CouncilProceedings.pickle'
 try:
@@ -58,6 +60,7 @@ except (OSError, IOError) as e:
     print ('Reading citycouncilordinance collection')
     CouncilProceedings = [item.metadata['identifier'] for item in search_items('collection:(citycouncilproceedings)').iter_as_items()]
     pickle.dump(CouncilProceedings, open(picklefile, "wb"), protocol=pickle.HIGHEST_PROTOCOL)
+"""
 
 # Read the file names
 PATH = '/media/smb/Uploads'
@@ -76,6 +79,8 @@ for fn in files:
         continue # not a bill
     if ' .TIF' in filename.upper():
         print (filename, ',space before .TIF')
+    if ' ' in filename[2]:
+        print (filename, ',space in third char')
     if len(filename.split('.')) > 2:
         print (filename, ',Period in filename')
     p_type = filename.split('-')[0].upper()
@@ -89,7 +94,8 @@ for fn in files:
         SMBlist.append('IN-12-31-'+fn.split('/')[-1].split(' ')[0][-4:])
 
 # Convert the IA names to the same format the files and metadata
-IAlist=[x[26:29].upper()+x[34:]+x[28:33] for x in CouncilProceedings]
+#IAlist=[x[26:29].upper()+x[34:]+x[28:33] for x in CouncilProceedings]
+IAlist=[x[26:29].upper()+x[34:]+x[28:33] for x,y in IA_SQL.SearchItem('Proc','%')]
 
 # Sort the three lists
 SMBlist.sort()
