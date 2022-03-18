@@ -57,20 +57,21 @@ for file_name in file_names:
     last_modified_date = datetime.datetime.fromtimestamp(mtime)
 
     newname = 'Podcast '+file_name.split('/')[-1]
-    Identifier = (newname.replace(',','-').
+    Identifier = (newname.replace('.mp3','').
+                          replace(',','-').
                           replace(' - ','-').
                           replace('- ','-').
                           replace("&",'').
                           replace(';','-').
+                          replace('.','-').
                           replace(' ','-').
                           replace('---','-').
                           replace('--','-').
                           replace('--','-').
-                          replace("'",'').
-                          replace('.mp3','')  )
+                          replace("'",'')  )
 
     vidDate = datetime.datetime.strftime(last_modified_date,'%Y-%m-%d')
-    Title = newname.split('.')[0].strip()
+    Title = newname.replace('.mp3','').strip()
     
     md = dict(collection = CollectionName, 
               title      = Title,

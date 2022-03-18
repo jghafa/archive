@@ -2,8 +2,7 @@
 
 from openpyxl import load_workbook
 from internetarchive import *
-#import pickle
-import sqlite3
+import IA_SQL
 import glob
 import argparse
 from datetime import datetime
@@ -134,43 +133,6 @@ brk = '<br />'
 
 Bills = {}
 
-SQLconn = sqlite3.connect('Council.sqlite')
-SQL = SQLconn.cursor()
-
-Lock=True
-Unlock=False
-def LockItem(itemtype, bill, locked):
-    ''' update the locked status of the item'''
-    insstring = 'INSERT OR REPLACE into Ordinance values (?,?)'
-    if itemtype[0] == 'P':
-        insstring = 'INSERT OR REPLACE into Proceeding values (?,?)'
-    if itemtype[0] == 'V':
-        insstring = 'INSERT OR REPLACE into Video values (?,?)'
-    SQL.execute(insstring,(bill,locked) )
-    SQLconn.commit()
-
-def RemoveItem(itemtype, bill):
-    ''' Remove from SQL if upload failed '''
-    selstring = 'DELETE FROM Ordinance WHERE item = (?);'
-    if itemtype[0] == 'P':
-        selstring = 'DELETE FROM FROM Proceeding WHERE item = (?);'
-    if itemtype[0] == 'V':
-        selstring = 'DELETE FROM FROM Video WHERE item = (?);'
-    SQL.execute(selstring,(bill,) )
-    SQLconn.commit()
-
-def ItemExist(itemtype, bill):
-    ''' Return True if the item exists, False if not '''
-    selstring = 'SELECT * FROM Ordinance WHERE item = (?);'
-    if itemtype[0] == 'P':
-        selstring = 'SELECT * FROM Proceeding WHERE item = (?);'
-    if itemtype[0] == 'V':
-        selstring = 'SELECT * FROM Video WHERE item = (?);'
-    for row in SQL.execute(selstring, (bill,) ):
-        return True
-    return False
-
-
 """
 Ord not in IA - Upload it
 Ord in IA and Unlocked - It's done so skip it
@@ -184,34 +146,6 @@ while looping through files
             Unlock it - LockItem to unlock
         else
             Remove it - RemoveItem
-"""
-
-# >>> x='FWCityCouncil-Ordinance-S-85-09-09'
-# >>> LockIt = True
-# >>> insertSQL('O',x, LockIt)
-# >>> UploadItem('O',x)
-# False
-# >>> insertSQL('O',x, not(LockIt))
-# >>> UploadItem('O',x)
-# True
-
-"""
-picklefile = 'CouncilVideo.pickle'
-try:
-    CouncilVideo = pickle.load(open(picklefile, "rb"))
-except (OSError, IOError) as e:
-    print ('Reading councilmeeting collection')
-    CouncilVideo = [item.metadata['identifier'] for item in search_items('collection:(councilmeetings)').iter_as_items()]
-    pickle.dump(CouncilVideo, open(picklefile, "wb"), protocol=pickle.HIGHEST_PROTOCOL)
-
-picklefile = 'CouncilOrdinance.pickle'
-try:
-    CouncilOrdinance = pickle.load(open(picklefile, "rb"))
-except (OSError, IOError) as e:
-    print ('Reading citycouncilordinance collection')
-    CouncilOrdinance = [item.metadata['identifier'] for item in search_items('collection:(citycouncilordinances)').iter_as_items()]
-    pickle.dump(CouncilOrdinance, open(picklefile, "wb"), protocol=pickle.HIGHEST_PROTOCOL)
-
 """
 # open log file
 log = open('../Documents/log.txt', 'a')
@@ -293,7 +227,7 @@ for f in range(len(fn_list)):
             'Video of Council Introduction '+intro))
 
         #if IntroID in CouncilVideo:
-        if ItemExist('V','FWCityCouncil-'+intro):
+        if IA_SQL.ItemExist('V','FWCityCouncil-'+intro):
             IntroLink += brk
         else:
             #print (bill)
@@ -313,7 +247,7 @@ for f in range(len(fn_list)):
                 'Video of Final Disposition '+final) + brk)
 
         #if FinalID in CouncilVideo:
-        if ItemExist('V','FWCityCouncil-'+final):
+        if IA_SQL.ItemExist('V','FWCityCouncil-'+final):
             FinalLink += brk
         else:
             #print (bill)
@@ -333,11 +267,11 @@ for f in range(len(fn_list)):
         Subject='Fort Wayne;'+bill+';'+Bills[bill][1]
 
 #        if Identifier in CouncilOrdinance and not bill in input_name:
-        if ItemExist('Ord', Identifier) and not bill in input_name:
-            print('Skipping',Identifier,datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+        if IA_SQL.ItemExist('Ord', Identifier) and not bill in input_name:
+            #print('Skipping',Identifier,datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
             continue
 
-        LockItem('Ord', Identifier, Lock)
+        IA_SQL.LockItem('Ord', Identifier, IA_SQL.Lock)
         print('Identifier',Identifier,datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
         # checking the year in the file path against a list years to be processed
@@ -409,7 +343,7 @@ for f in range(len(fn_list)):
                     print ('Status', r[0].status_code, zipFile)
                     log.write(datetime.now().strftime('%Y-%m-%d %H:%M:%S, ') + 
                               FilePath +' uploaded' + '\n')
-                    LockItem('Ord', Identifier, Unlock)
+                    IA_SQL.LockItem('Ord', Identifier, IA_SQL.Unlock)
                     #CouncilOrdinance.append(Identifier) # Note to avoid further uploads
                     #pickle.dump(CouncilOrdinance, open(picklefile, "wb"),
                     #            protocol=pickle.HIGHEST_PROTOCOL)
@@ -418,7 +352,7 @@ for f in range(len(fn_list)):
                     print('Upload Failed on ', zipFile, e.message, e.args)
                     log.write(datetime.now().strftime('%Y-%m-%d %H:%M:%S, ') + 
                               FilePath +' failed' +  e.message + '\n')
-                    RemoveItem('Ord', Identifier)
+                    IA_SQL.RemoveItem('Ord', Identifier)
                     continue
             else:
                 z=input('update_IA is False')

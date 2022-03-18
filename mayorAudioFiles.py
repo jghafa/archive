@@ -56,20 +56,21 @@ for file_name in glob.glob(PATH + '*.[wW][aA][vV]'):
     last_modified_date = datetime.datetime.fromtimestamp(mtime)
 
     newname = 'RadioSpot '+file_name.split('/')[-1]
-    Identifier = (newname.replace(',','-').
+    Identifier = (newname.replace('.wav','').
+                          replace(',','-').
                           replace(' - ','-').
                           replace('- ','-').
                           replace("&",'').
                           replace(';','-').
+                          replace('.','-').
                           replace(' ','-').
                           replace('---','-').
                           replace('--','-').
                           replace('--','-').
-                          replace("'",'').
-                          replace('.wav','')  )
+                          replace("'",'')  )
 
     vidDate = datetime.datetime.strftime(last_modified_date,'%Y-%m-%d')
-    Title = newname.split('.')[0].strip()
+    Title = newname.replace('.wav','').strip()
     
     md = dict(collection = CollectionName, 
               title      = Title,
