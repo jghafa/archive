@@ -99,11 +99,13 @@ def SearchLock(itemtype, lock=True):
 
 def UnlockAll(itemtype):
     for l in SearchLock(itemtype):
-        LockItem(itemtype, l[0], Unlock)    
+        LockItem(itemtype, l[0], Unlock)
 
-if __name__ == '__main__':
+def StatusReport():
+    # Item count
     print('Ord =',CountItem('Ord'))
     print('Locked Ord',len(SearchLock('Ord')))
+    # Locked Ordinances
     for l in SearchLock('Ord'):
         print(l[0],'Locked')
         print(f"IA_SQL.LockItem('Ord', '{l[0]}', IA_SQL.Unlock)")
@@ -112,6 +114,7 @@ if __name__ == '__main__':
     else:
         print('Ord Search Failed')
     print()
+    # Proceeding Count
     print('Pro =',CountItem('Proc'))
     print('Locked Pro',len(SearchLock('Proc')))
     for l in SearchLock('Pro'):
@@ -122,10 +125,16 @@ if __name__ == '__main__':
     else:
         print('Failed Proceeding Search')
     print()
+    #Video Count
     print('Vid =',CountItem('Video'))
     print('Locked Vid',len(SearchLock('Vid')))
     for l in SearchLock('Vid'):
         print(l[0],'Locked')
         print(f"IA_SQL.LockItem('Vid', '{l[0]}', IA_SQL.Unlock)")
     print()
+    # Print common commands
     print(f"import {__file__.split('/')[-1].split('.')[0]}")
+    print(f"StatusRport()")
+
+if __name__ == '__main__':
+    StatusReport()

@@ -7,6 +7,7 @@ from internetarchive import *
 # import pickle
 import IA_SQL
 import glob
+import os
 
 def build_Bills_dict (Bills):
     """ Read Excel Ordinance data sheet and append it to a dictionary"""
@@ -56,6 +57,15 @@ for fn in files:
         continue # not a bill
     if len(filename.split('.')) > 2:
         print (filename, ',Period in filename')
+    if filename[0:3] in ['CR ']:
+        print(filename, ',Renaming')
+        os.rename(fn,fn.replace('/CR ','/CR-'))
+    if filename[0:3] in ['CS ']:
+        print(filename, ',Renaming')
+        os.rename(fn,fn.replace('/CS ','/CS-'))
+    if filename[0:3] in ['CO ']:
+        print(filename, ',Renaming')
+        os.rename(fn,fn.replace('/CO ','/CO-'))
     prefix = filename.split('-')[0]
     if prefix in ['CR','CS','CO']:
         continue # this is a council proceeding
