@@ -137,71 +137,6 @@ brk = '<br />'
 
 Procs = {}
 
-"""
-SQLconn = sqlite3.connect('Council.sqlite')
-SQL = SQLconn.cursor()
-
-Lock=True
-Unlock=False
-def LockItem(itemtype, bill, locked):
-    ''' update the locked status of the item'''
-    insstring = 'INSERT OR REPLACE into Ordinance values (?,?)'
-    if itemtype[0] == 'P':
-        insstring = 'INSERT OR REPLACE into Proceeding values (?,?)'
-    if itemtype[0] == 'V':
-        insstring = 'INSERT OR REPLACE into Video values (?,?)'
-    SQL.execute(insstring,(bill,locked) )
-    SQLconn.commit()
-
-def RemoveItem(itemtype, bill):
-    ''' Remove from SQL if upload failed '''
-    selstring = 'DELETE FROM Ordinance WHERE item = (?);'
-    if itemtype[0] == 'P':
-        selstring = 'DELETE FROM Proceeding WHERE item = (?);'
-    if itemtype[0] == 'V':
-        selstring = 'DELETE FROM Video WHERE item = (?);'
-    SQL.execute(selstring,(bill,) )
-    SQLconn.commit()
-
-def ItemExist(itemtype, bill):
-    ''' Return True if the item exists, False if not '''
-    selstring = 'SELECT * FROM Ordinance WHERE item = (?);'
-    if itemtype[0] == 'P':
-        selstring = 'SELECT * FROM Proceeding WHERE item = (?);'
-    if itemtype[0] == 'V':
-        selstring = 'SELECT * FROM Video WHERE item = (?);'
-    for row in SQL.execute(selstring, (bill,) ):
-        return True
-    return False
-"""
-
-
-"""
-picklefile = 'CouncilVideo.pickle'
-try:
-    CouncilVideo = pickle.load(open(picklefile, "rb"))
-except (OSError, IOError) as e:
-    print ('Reading councilmeeting collection')
-    CouncilVideo = [item.metadata['identifier'] for item in search_items('collection:(councilmeetings)').iter_as_items()]
-    pickle.dump(CouncilVideo, open(picklefile, "wb"), protocol=pickle.HIGHEST_PROTOCOL)
-
-picklefile = 'CouncilOrdinance.pickle'
-try:
-    CouncilOrdinance = pickle.load(open(picklefile, "rb"))
-except (OSError, IOError) as e:
-    print ('Reading citycouncilordinance collection')
-    CouncilOrdinance = [item.metadata['identifier'] for item in search_items('collection:(citycouncilordinances)').iter_as_items()]
-    pickle.dump(CouncilOrdinance, open(picklefile, "wb"), protocol=pickle.HIGHEST_PROTOCOL)
-
-picklefile = 'CouncilProceedings.pickle'
-try:
-    CouncilProceedings = pickle.load(open(picklefile, "rb"))
-except (OSError, IOError) as e:
-    print ('Reading citycouncilproceeding collection')
-    CouncilProceedings = [item.metadata['identifier'] for item in search_items('collection:(citycouncilproceedings)').iter_as_items()]
-    pickle.dump(CouncilProceedings, open(picklefile, "wb"), protocol=pickle.HIGHEST_PROTOCOL)
-"""
-
 # open log file
 log = open('../Documents/log.txt', 'a')
 #xlink = open('../Documents/Crosslink.txt', 'a')
@@ -288,10 +223,11 @@ for f in range(len(fn_list)):
             #print('Skipping',Identifier,datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
             continue
 
-        IA_SQL.LockItem('Proc', Identifier, IA_SQL.Lock)
-        print('Identifier',Identifier,datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+        print('Identifier'+"     ",Identifier,end="\r")
         # checking the year in the file path against a list years to be processed
         if dirlist[f].split('/')[4][:4] in input_name or p_name in input_name:
+            IA_SQL.LockItem('Proc', Identifier, IA_SQL.Lock)
+            print('Identifier',Identifier,datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
             FilePath = dirlist[f]+fn_list[f]
             print(dirlist[f].split('/')[4][:4],input_name ,p_name )
             print('File Path',FilePath)
@@ -353,10 +289,6 @@ for f in range(len(fn_list)):
                     log.write(datetime.now().strftime('%Y-%m-%d %H:%M:%S, ') + 
                               FilePath +' uploaded' + '\n')
                     IA_SQL.LockItem('Proc', Identifier, IA_SQL.Unlock)
-                    #picklefile = 'CouncilProceedings.pickle'
-                    #CouncilProceedings.append(Identifier) # Note to avoid further uploads
-                    #pickle.dump(CouncilProceedings, open(picklefile, "wb"),
-                    #            protocol=pickle.HIGHEST_PROTOCOL)
 
                 except Exception as e:
                     print('Upload Failed on ', zipFile, e.message, e.args)

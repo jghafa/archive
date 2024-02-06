@@ -101,6 +101,10 @@ def UnlockAll(itemtype):
     for l in SearchLock(itemtype):
         LockItem(itemtype, l[0], Unlock)
 
+def DeleteLockedAll(itemtype):
+    for l in SearchLock(itemtype):
+        RemoveItem(itemtype, l[0])
+
 def StatusReport():
     # Item count
     print('Ord =',CountItem('Ord'))
@@ -134,7 +138,7 @@ def StatusReport():
     print()
     # Print common commands
     print(f"import {__file__.split('/')[-1].split('.')[0]}")
-    print(f"StatusRport()")
+    print(f"StatusReport()")
 
 if __name__ == '__main__':
     StatusReport()

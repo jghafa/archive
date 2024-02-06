@@ -58,21 +58,29 @@ if arg[0] == 'A' or arg[0] == 'O':
     SQL.execute("""drop table if exists Ordinance;""")
     SQL.execute("""create table Ordinance (item text PRIMARY KEY, locked BOOL );""")
     for item in search_items('collection:citycouncilordinances').iter_as_items():
-        print (item.identifier)
+        print (item.identifier+"     ",end="\r")
         AddItem('O',item.identifier)
+    print()
+    print()
 
 if arg[0] == 'A' or arg[0] == 'P':
     print ('Reading citycouncilproceeding collection')
     SQL.execute("""drop table if exists Proceeding;""")
     SQL.execute("""create table Proceeding (item text PRIMARY KEY, locked BOOL );""")
     for item in search_items('collection:citycouncilproceedings').iter_as_items():
-        print (item.identifier)
+        print (item.identifier+"     ",end="\r")
         AddItem('P',item.identifier)
+    print()
+    print()
 
 if arg[0] == 'A' or arg[0] == 'V':
     print ('Reading councilmeeting collection')
     SQL.execute("""drop table if exists Video;""")
     SQL.execute("""create table Video (item text PRIMARY KEY, locked BOOL );""")
     for item in search_items('collection:(councilmeetings)').iter_as_items():
-        print (item.identifier)
+        print (item.identifier+"     ",end="\r")
         AddItem('V',item.identifier)
+    print()
+    print()
+
+print('Complete.  Rename new.Council.sqlite to current version')

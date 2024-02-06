@@ -15,8 +15,11 @@ import shutil
 # True for uploading files, false for debugging
 update_IA = True
 
+TIFs = ['.tif','.tiF','.tIf','.tIF','.Tif','.TiF','.TIf','.TIF']
+
+
 parser = argparse.ArgumentParser()
-parser.add_argument("coll_name", nargs='*', default=['1987'])
+parser.add_argument("coll_name", nargs='*', default=['1968'])
 args = parser.parse_args()
 # input_name is list of strings
 input_name = args.coll_name
@@ -188,11 +191,11 @@ for f in range(len(fn_list)):
         continue  # this a windows junk file
     if not file_ext.upper() == 'TIF':
         continue  # not a bill
-    if 'Blueprint' in dirlist[f]:
-        continue  # Skip the blueprints, they are batched with the primary
     prefix = file_name.split('-')[0]
     if prefix in ['CR','CS','CO']:
         continue # this is a council proceeding
+    if (' ' in file_name):
+        continue  # Skip the blueprints, they are batched with the primary
 
     bill = file_name.split(' ')[0]
     #print(bill, end=' ')
@@ -271,12 +274,12 @@ for f in range(len(fn_list)):
             #print('Skipping',Identifier,datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
             continue
 
-        IA_SQL.LockItem('Ord', Identifier, IA_SQL.Lock)
-        print('Identifier',Identifier,datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-
+        print('Identifier'+"     ",Identifier,end="\r")
         # checking the year in the file path against a list years to be processed
         listyear = dirlist[f].split('/')[4]
         if listyear in input_name or bill in input_name:
+            IA_SQL.LockItem('Ord', Identifier, IA_SQL.Lock)
+            print('Identifier',Identifier,datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
             FilePath = dirlist[f]+fn_list[f]
             print('File Path',FilePath)
             #print(brk)
@@ -301,39 +304,46 @@ for f in range(len(fn_list)):
                         date       = final)
             #print(md)
 
-            convertList = glob.glob(dirlist[f] + bill + '*.[tT][iI][fF]')
-
             tifnum = 0
-            for c in convertList:
-                convertCmd = ('convert ' + c.replace(' ','\ ') + ' '
-                              + final + '-' + str(tifnum).zfill(3) + '%03d.tif')
-                #print(convertCmd)
-                x = subprocess.run( [convertCmd],
-                         cwd=tmpDir,
-                         stdout=subprocess.DEVNULL,
-                         shell=True)
-                tifnum += 1
+            for fn in files:
+                # find filename for bill, must end in .tif
+                if (bill in fn) and (fn[-4:] in TIFs):
+                    if bill + '.' in fn:
+                        # normal file name
+                        convertCmd = ('convert '            +
+                                      fn.replace(' ','\ ')  +
+                                      ' '                   +
+                                      bill                  +
+                                      '-0'                  +
+                                      str(tifnum).zfill(3)  +
+                                      '%03d.tif')
+                    else:
+                        #Blueprint-like file
+                        convertCmd = ('convert '            +
+                                      fn.replace(' ','\ ')  +
+                                      ' '                   +
+                                      bill                  +
+                                      '-1'                  +
+                                      str(tifnum).zfill(3)  +
+                                      '%03d.tif')
+                    #print(convertCmd)
+                    x = subprocess.run( [convertCmd],
+                        cwd=tmpDir,
+                        stdout=subprocess.DEVNULL,
+                        shell=True)
+                    tifnum += 1
 
-            # Add the blueprints, if needed
-            # should be bill instead of file_name
-            if glob.glob('/media/smb/Uploads/Blueprints/'+bill+'*.[tT][iI][fF]'):
-                convertCmd = ('convert ' + '/media/smb/Uploads/Blueprints/'
-                              + bill +'*.[tT][iI][fF]'
-                              +  ' ' + final + '-B%03d.tif' )
-                #print(convertCmd)
-                x = subprocess.run( [convertCmd],
-                         cwd=tmpDir,
-                         stdout=subprocess.DEVNULL,
-                         shell=True)
-                print('Blueprints Added to',Identifier)
 
             # Zip the TIFs into a single file to upload
             zipFile = tmpDir + Identifier + '_images.zip'
             zipCmd = 'zip ' + zipFile + ' *.[tT][iI][fF]'
-            x = subprocess.run([zipCmd],
+            if update_IA:
+                x = subprocess.run([zipCmd],
                      cwd=tmpDir,
                      stdout=subprocess.DEVNULL,
                      shell=True)
+            else:
+                print(zipCmd,tmpDir)
 
             # Send the files to IA
             if update_IA:
