@@ -16,6 +16,7 @@ import shutil
 update_IA = True
 
 TIFs = ['.tif','.tiF','.tIf','.tIF','.Tif','.TiF','.TIf','.TIF']
+PDFs = ['.pdf','.pdF','.pDf','.pDF','.Pdf','.PdF','.PDf','.PDF']
 
 
 parser = argparse.ArgumentParser()
@@ -327,6 +328,20 @@ for f in range(len(fn_list)):
                                       str(tifnum).zfill(3)  +
                                       '%03d.tif')
                     #print(convertCmd)
+                    x = subprocess.run( [convertCmd],
+                        cwd=tmpDir,
+                        stdout=subprocess.DEVNULL,
+                        shell=True)
+                    tifnum += 1
+                    continue
+                if (bill in fn) and (fn[-4:] in PDFs):
+                    convertCmd = ('convert '            +
+                                  fn.replace(' ','\ ')  +
+                                  ' '                   +
+                                  bill                  +
+                                  '-2'                  +
+                                  str(tifnum).zfill(3)  +
+                                  '%03d.tif')
                     x = subprocess.run( [convertCmd],
                         cwd=tmpDir,
                         stdout=subprocess.DEVNULL,
