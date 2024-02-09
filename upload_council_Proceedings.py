@@ -5,8 +5,6 @@ Code to upload the council proceedings
 
 from openpyxl import load_workbook
 from internetarchive import *
-#import pickle
-#import sqlite3
 import IA_SQL
 import glob
 import argparse
@@ -19,6 +17,9 @@ import tempfile
 
 # True for uploading files, false for debugging
 update_IA = True
+
+TIFs = ['.tif','.tiF','.tIf','.tIF','.Tif','.TiF','.TIf','.TIF']
+PDFs = ['.pdf','.pdF','.pDf','.pDF','.Pdf','.PdF','.PDf','.PDF']
 
 parser = argparse.ArgumentParser()
 parser.add_argument("coll_name", nargs='*', default=['1970']) 
@@ -62,6 +63,13 @@ Subject = ['Fort Wayne','Local Government','City Council']
 # Col N, row[13], Bills[file_name][4], Intro
 # Col O, row[14], Bills[file_name][5], Final
 # Col P, row[15], Bills[file_name][6], Notes
+
+def sizeof_fmt(num, suffix="B"):
+    for unit in ("", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"):
+        if abs(num) < 1024.0:
+            return f"{num:3.1f}{unit}{suffix}"
+        num /= 1024.0
+    return f"{num:.1f}Yi{suffix}"
 
 def build_Bills_dict (Bills):
     """ Read Excel Ordinance data sheet and append it to a dictionary"""
@@ -139,12 +147,9 @@ Procs = {}
 
 # open log file
 log = open('../Documents/log.txt', 'a')
-#xlink = open('../Documents/Crosslink.txt', 'a')
 log.write(datetime.now().strftime('%Y-%m-%d %H:%M:%S, ') + 'Start UpLoad \n')
-#xlink.write(datetime.now().strftime('%Y-%m-%d %H:%M:%S, ') + 'Start UpLoad \n')
 
-#xlink.write('Error,Bill,Intro,Intro Day,Final,Final Day,Notes' '\n')
-
+print('Load Workbook       ',end='\r')
 
 #wb = load_workbook(filename =
 #    '//vs-videostorage/City Council Ordinances/Council Proceedings Index.xlsx')
@@ -157,9 +162,14 @@ Procs = build_Proceedings_dict (Procs, 'Council Proceedings')
 
 #Bills = build_Bills_dict (Bills)
 
+print('Load Files          ',end='\r')
+
 # Read the file names
+
 PATH = '/media/smb/Uploads'
 
+tmpDir = tempfile.mkdtemp(dir='/home/jghafa/archive/tmp',prefix='Proc-U-')+'/'
+    
 # get all the files in and under PATH
 files = [file for file in glob.glob(PATH + '/**/*.*', recursive=True)]
 
@@ -169,9 +179,7 @@ for fn in files:
     fn_list.append(fn.split('/')[-1])
     dirlist.append(fn.rstrip(fn.split('/')[-1]))
 
-tmpDir = tempfile.mkdtemp(dir='/home/jghafa/archive/tmp',prefix='Proc-U-')+'/'
-    
-print ()
+print ('            ')
 # loop thru file names
 for f in range(len(fn_list)):
     file_name, file_ext = fn_list[f].split('.')
@@ -179,12 +187,13 @@ for f in range(len(fn_list)):
         continue  # this a windows junk file
     if not file_ext.upper() == 'TIF':
         continue  # not a bill
-    if 'Blueprint' in dirlist[f]:
-        continue  # Skip the blueprints, they are batched with the primary
     proc_name = file_name.split(' ')[0]
     p_type = proc_name.split('-')[0]
     if not p_type in ['CR','CS','CO']:
         continue # this is a council proceeding
+    if ' ' in file_name:
+        continue  # Skip the blueprints, they are batched with the primary
+
     p_mon  = proc_name.split('-')[1]
     p_day  = proc_name.split('-')[2]
     p_yr   = proc_name.split('-')[3]
@@ -192,7 +201,6 @@ for f in range(len(fn_list)):
     p_name = p_type + '-' + p_yr + '-' + p_mon + '-' + p_day
     Identifier = 'FWCityCouncil-Proceedings-'+p_name+TestIdSuffix
     Title = 'Fort Wayne Council Proceedings '+p_name
-    #print (Procs[file_name])
 
     try:
         if Procs[proc_name] is None:
@@ -229,8 +237,8 @@ for f in range(len(fn_list)):
             IA_SQL.LockItem('Proc', Identifier, IA_SQL.Lock)
             print('Identifier',Identifier,datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
             FilePath = dirlist[f]+fn_list[f]
-            print(dirlist[f].split('/')[4][:4],input_name ,p_name )
-            print('File Path',FilePath)
+            #print(dirlist[f].split('/')[4][:4],input_name ,p_name )
+            print(FilePath)
                             
             md = dict(  collection = CollectionName, 
                         title      = Title,
@@ -241,40 +249,56 @@ for f in range(len(fn_list)):
                         licenseurl = License,
                         notes      = Notes,
                         date       = MeetDate)
-            #print(md)
 
-            convertList = glob.glob(dirlist[f] + proc_name + '*.[tT][iI][fF]')
-            
             tifnum = 0
-            for c in convertList:
-                # c.replace escapes spaces in the file name
-                convertCmd = ('convert ' + c.replace(' ','\ ') + ' '
-                              + p_name + '-' + str(tifnum) + '%03d.tif')
-                #print(convertCmd)
-                x = subprocess.run( [convertCmd],
-                         cwd=tmpDir,
-                         stdout=subprocess.DEVNULL,
-                         shell=True)            
-                tifnum += 1
+            for fn in files:
+                # find filename for proc, must end in .tif
+                if (proc_name in fn) and (fn[-4:] in TIFs):
+                    if proc_name + '.' in fn:
+                        # normal file name
+                        convertCmd = ('convert '            +
+                                      fn.replace(' ','\ ')  +
+                                      ' '                   +
+                                      proc_name             +
+                                      '-0'                  +
+                                      str(tifnum).zfill(3)  +
+                                      '%03d.tif')
+                    else:
+                        #Blueprint-like file
+                        convertCmd = ('convert '            +
+                                      fn.replace(' ','\ ')  +
+                                      ' '                   +
+                                      proc_name             +
+                                      '-1'                  +
+                                      str(tifnum).zfill(3)  +
+                                      '%03d.tif')
+                    print('Input TIFs    ',end='\r')
+                    x = subprocess.run( [convertCmd],
+                        cwd=tmpDir,
+                        stdout=subprocess.DEVNULL,
+                        shell=True)
+                    tifnum += 1
+                    continue
 
-            # Add the blueprints, if needed
-            # should be proc_name instead of file_name
-            
-            if glob.glob('/media/smb/Uploads/Blueprints/'+proc_name+'*.[tT][iI][fF]'):
-                convertCmd = ('convert ' + '/media/smb/Uploads/Blueprints/'
-                              + proc_name +'*.[tT][iI][fF]'
-                              +  ' ' + p_name + '-B%03d.tif' )
-                #print(convertCmd)
-                x = subprocess.run( [convertCmd],
-                         cwd=tmpDir,
-                         stdout=subprocess.DEVNULL,
-                         shell=True)
-                print('Blueprints Added to',Identifier)
+                if (proc_name in fn) and (fn[-4:] in PDFs):
+                    convertCmd = ('convert '            +
+                                  fn.replace(' ','\ ')  +
+                                  ' '                   +
+                                  proc_name             +
+                                  '-2'                  +
+                                  str(tifnum).zfill(3)  +
+                                  '%03d.tif')
+                    print('Input PDFs       ',end='\r')
+                    x = subprocess.run( [convertCmd],
+                        cwd=tmpDir,
+                        stdout=subprocess.DEVNULL,
+                        shell=True)
+                    tifnum += 1
 
             # Zip the TIFs into a single file to upload
+            print('Compress Pages',end='    \r')
             zipFile = tmpDir + Identifier + '_images.zip'
             zipCmd = 'zip ' + zipFile + ' *.[tT][iI][fF]'
-            #print (zipCmd)
             x = subprocess.run([zipCmd],
                      cwd=tmpDir,
                      stdout=subprocess.DEVNULL,
@@ -283,6 +307,7 @@ for f in range(len(fn_list)):
             # Send the files to IA
             if update_IA:
                 try:
+                    print('Uploading Zip',sizeof_fmt(os.stat(zipFile).st_size),end='    \r')
                     r = upload(Identifier, files=zipFile, metadata=md, 
                                retries=30, checksum=True) #retries_sleep=20,
                     print (r[0].status_code, zipFile)
@@ -311,5 +336,4 @@ for f in range(len(fn_list)):
         print(dirlist[f], fn_list[f],'<<<<========== Not Found in spreadsheet')
 
 log.close()
-#xlink.close()
 shutil.rmtree(tmpDir)

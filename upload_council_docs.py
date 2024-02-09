@@ -64,6 +64,13 @@ Subject = ['Fort Wayne','Local Government','City Council']
 # Col O, row[14], Bills[file_name][5], Final
 # Col P, row[15], Bills[file_name][6], Notes
 
+def sizeof_fmt(num, suffix="B"):
+    for unit in ("", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"):
+        if abs(num) < 1024.0:
+            return f"{num:3.1f}{unit}{suffix}"
+        num /= 1024.0
+    return f"{num:.1f}Yi{suffix}"
+
 def build_Bills_dict (Bills):
     """ Read Excel Ordinance data sheet and append it to a dictionary"""
     for ws in wb.worksheets:
@@ -159,6 +166,8 @@ xlink.write(datetime.now().strftime('%Y-%m-%d %H:%M:%S, ') + 'Start UpLoad \n')
 
 xlink.write('Error,Bill,Intro,Intro Day,Final,Final Day,Notes' '\n')
 
+print('Load Workbook       ',end='\r')
+
 #wb = load_workbook(filename =
 #    '//vs-videostorage/City Council Ordinances/Council Proceedings Index.xlsx')
 wb = load_workbook(filename = '/media/smb/Council Proceedings Index.xlsx')
@@ -169,6 +178,8 @@ Bills = build_Proceedings_dict (Bills, 'Council Proceedings')
 wb = load_workbook(filename = '/media/smb/Scanned Ordinance Index.xlsx')
 
 Bills = build_Bills_dict (Bills)
+
+print('Load Files          ',end='\r')
 
 # Read the file names
 PATH = '/media/smb/Uploads'
@@ -184,7 +195,7 @@ for fn in files:
     fn_list.append(fn.split('/')[-1])
     dirlist.append(fn.rstrip(fn.split('/')[-1]))
 
-print ()
+print ('            ')
 # loop thru file names
 for f in range(len(fn_list)):
     file_name, file_ext = fn_list[f].split('.')
@@ -282,17 +293,7 @@ for f in range(len(fn_list)):
             IA_SQL.LockItem('Ord', Identifier, IA_SQL.Lock)
             print('Identifier',Identifier,datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
             FilePath = dirlist[f]+fn_list[f]
-            print('File Path',FilePath)
-            #print(brk)
-            #print('title',Title)
-            #print(brk)
-            #print(MediaType,CollectionName,final,intro)
-            #print(brk)
-            #print(Desc)
-            #print(brk)
-            #print(Notes)
-            #print(brk)
-            #print(Subject)
+            print(FilePath)
 
             md = dict(  collection = CollectionName, 
                         title      = Title,
@@ -303,7 +304,6 @@ for f in range(len(fn_list)):
                         licenseurl = License,
                         notes      = Notes,
                         date       = final)
-            #print(md)
 
             tifnum = 0
             for fn in files:
@@ -327,7 +327,7 @@ for f in range(len(fn_list)):
                                       '-1'                  +
                                       str(tifnum).zfill(3)  +
                                       '%03d.tif')
-                    #print(convertCmd)
+                    print('Input TIFs    ',end='\r')
                     x = subprocess.run( [convertCmd],
                         cwd=tmpDir,
                         stdout=subprocess.DEVNULL,
@@ -342,6 +342,7 @@ for f in range(len(fn_list)):
                                   '-2'                  +
                                   str(tifnum).zfill(3)  +
                                   '%03d.tif')
+                    print('Input PDFs    ',end='\r')
                     x = subprocess.run( [convertCmd],
                         cwd=tmpDir,
                         stdout=subprocess.DEVNULL,
@@ -350,6 +351,7 @@ for f in range(len(fn_list)):
 
 
             # Zip the TIFs into a single file to upload
+            print('Compress Pages',end='    \r')
             zipFile = tmpDir + Identifier + '_images.zip'
             zipCmd = 'zip ' + zipFile + ' *.[tT][iI][fF]'
             if update_IA:
@@ -362,6 +364,7 @@ for f in range(len(fn_list)):
 
             # Send the files to IA
             if update_IA:
+                print('Uploading Zip',sizeof_fmt(os.stat(zipFile).st_size),end='    \r')
                 try:
                     r = upload(Identifier, files=zipFile, metadata=md, 
                                retries=30, checksum=True) #retries_sleep=20,
@@ -369,9 +372,6 @@ for f in range(len(fn_list)):
                     log.write(datetime.now().strftime('%Y-%m-%d %H:%M:%S, ') + 
                               FilePath +' uploaded' + '\n')
                     IA_SQL.LockItem('Ord', Identifier, IA_SQL.Unlock)
-                    #CouncilOrdinance.append(Identifier) # Note to avoid further uploads
-                    #pickle.dump(CouncilOrdinance, open(picklefile, "wb"),
-                    #            protocol=pickle.HIGHEST_PROTOCOL)
 
                 except Exception as e:
                     print('Upload Failed on ', zipFile, e.message, e.args)
