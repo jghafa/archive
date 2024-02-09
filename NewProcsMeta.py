@@ -100,6 +100,7 @@ if len(input_name) > 1:
 #for c in reversed(CouncilProceedings):
 for row in IA_SQL.SearchItem('Pro',SQLstring):
     c = row[0]
+    print(c+'         ',end='\r')
     p_type = c.split('-')[2]
     p_yr   = c.split('-')[-3]
     p_mon  = c.split('-')[-2]
@@ -167,7 +168,7 @@ for row in IA_SQL.SearchItem('Pro',SQLstring):
 
     if update_meta and update_IA:
         r = item.modify_metadata(dict(description=Desc,notes=Notes))
-        print (r,' IA metadata updated')
+        print (c, r,' IA metadata updated')
 
     # check title page of book, fix if needed
     try:
@@ -205,7 +206,7 @@ for row in IA_SQL.SearchItem('Pro',SQLstring):
                   tmpDir +          c +'_scandata.xml')
         if update_IA:
             r = item.upload(files=tmpDir+c+'_scandata.xml',retries=25)
-            print (r,' XML updated')
+            print (c, r,' XML updated')
 
     for tmpfile in glob.glob(tmpDir + '*.[xX][mM][lL]'):
         os.remove(tmpfile)

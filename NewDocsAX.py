@@ -97,6 +97,8 @@ brk = '<br>'
 
 Bills = {}
 
+print('Loading Metadata',end='\r')
+
 # open log file
 targetDir='/media/smb/PDFs/'+ input_name[0] + '/'
 os.makedirs(targetDir, exist_ok=True)
@@ -109,6 +111,7 @@ with open(targetDir+'AXUpload-'+input_name[0]+'.txt', 'w') as AXlink:
     PATH = '/media/smb/Uploads'
 
     # get all the files in and under PATH
+    print('Loading file names',end='\r')
     files = [file for file in glob.glob(PATH + '/**/*.*', recursive=True)]
 
     files_loaded = []
@@ -149,14 +152,14 @@ with open(targetDir+'AXUpload-'+input_name[0]+'.txt', 'w') as AXlink:
                 FilePath = dirlist[f]+fn_list[f]
 
                 if bill in files_loaded:
-                    print('Already downloaded',bill)
+                    print(bill, 'Already downloaded',end='\r')
                     continue
 
-                print(datetime.now().strftime('%Y-%m-%d %H:%M:%S'),end=' ')
+                print(bill,datetime.now().strftime('%Y-%m-%d %H:%M:%S'),end='\r')
 
 
                 item = get_item(Identifier)
-                item.download(glob_pattern='*.pdf',destdir=targetDir,no_directory=True,retries=10)
+                item.download(glob_pattern='*.pdf',destdir=targetDir,no_directory=True,retries=15)
 
 
                 meta =(        Bills[bill][0]
@@ -167,7 +170,7 @@ with open(targetDir+'AXUpload-'+input_name[0]+'.txt', 'w') as AXlink:
                         +'|'+Bills[bill][5].strftime("%m/%d/%Y")
                         +'|'+SPDnotes+'|'
                         +'\n')
-                #print(meta)
+                print(bill,'Downloaded     ',end='\r')
                 AXlink.write(meta)
                 AXlink.write('@@'+targetDir+bill+'.PDF'+'\n')
                 files_loaded.append(bill)

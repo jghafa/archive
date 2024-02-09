@@ -83,6 +83,7 @@ if len(input_name) > 1:
 #for c in reversed(CouncilOrdinance):
 for row in IA_SQL.SearchItem('Ord',SQLstring):
     c = row[0]
+    print(c+'     ',end='\r')
     bill = c.split('FWCityCouncil-Ordinance-')[1]
 
     final = Bills[bill][5].strftime("%Y-%m-%d")
@@ -162,7 +163,7 @@ for row in IA_SQL.SearchItem('Ord',SQLstring):
 
     if update_meta:
         r = item.modify_metadata(dict(description=Desc,notes=Notes))
-        print (r,' IA metadata updated')
+        print (c,r,' IA metadata updated')
 
     # check title page of book, fix if needed
     item.download(files=c+'_scandata.xml',destdir=tmpDir,no_directory=True,retries=10)
@@ -194,7 +195,7 @@ for row in IA_SQL.SearchItem('Ord',SQLstring):
         os.rename(tmpDir + 'new_' + c +'_scandata.xml',
                   tmpDir +          c +'_scandata.xml')
         r = item.upload(files=tmpDir+c+'_scandata.xml',retries=10)
-        print (r,' XML updated')
+        print (c,r,' XML updated')
 
     for tmpfile in glob.glob(tmpDir + '*.[xX][mM][lL]'):
         os.remove(tmpfile)
